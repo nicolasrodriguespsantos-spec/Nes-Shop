@@ -79,6 +79,52 @@ async function moderate(text, apiKey) {
   return await missLlmCheck(text, apiKey);
 }
 
+// ── M.I.S.S persistente (Supabase via REST, sem dependência npm) ──
+// Guarda strikes e ban por IP do visitante, na tabela miss_moderation.
+// Assim o ban sobrevive a fechar a aba / nova sessão (até o IP mudar).
+const SUPA_URL = process.env.SUPABASE_URL;
+const SUPA_KEY = process.env.SUPABASE_SECRET_KEY;
+const MISS_MAX_STRIKES = 3; // 3 avisos, ban no 4º
+
+function supaHeaders(extra) {
+  return Object.assign({
+    'apikey': SUPA_KEY,
+    'Authorization': 'Bearer ' + SUPA_KEY,
+    'Content-Type': 'application/json'
+  }, extra || {});
+}
+
+// lê o registro de moderação de um cliente (ou null se não existe / banco off)
+async function getModeration(clientId) {
+  if (!SUPA_URL || !SUPA_KEY) return null;
+  try {
+    const url = SUPA_URL + '/rest/v1/miss_moderation?client_id=eq.' + encodeURIComponent(clientId) + '&select=*';
+    const r = await fetch(url, { headers: supaHeaders() });
+    if (!r.ok) { console.error('Supabase GET erro:', await r.text()); return null; }
+    const rows = await r.json();
+    return rows[0] || null;
+  } catch (e) { console.error('Supabase GET falha:', e); return null; }
+}
+
+// registra uma violação: +1 strike, bane no 4º. Reusa o registro já lido.
+async function registerViolation(clientId, existing, reason) {
+  const strikes = (existing ? existing.strikes : 0) + 1;
+  const banned = strikes > MISS_MAX_STRIKES;
+  const body = { strikes, banned, last_reason: reason, updated_at: new Date().toISOString() };
+  if (SUPA_URL && SUPA_KEY) {
+    try {
+      if (existing) {
+        const url = SUPA_URL + '/rest/v1/miss_moderation?client_id=eq.' + encodeURIComponent(clientId);
+        await fetch(url, { method: 'PATCH', headers: supaHeaders({ 'Prefer': 'return=minimal' }), body: JSON.stringify(body) });
+      } else {
+        const url = SUPA_URL + '/rest/v1/miss_moderation';
+        await fetch(url, { method: 'POST', headers: supaHeaders({ 'Prefer': 'return=minimal' }), body: JSON.stringify(Object.assign({ client_id: clientId }, body)) });
+      }
+    } catch (e) { console.error('Supabase write falha:', e); }
+  }
+  return { strikes, banned };
+}
+
 exports.handler = async (event) => {
   // Cabeçalhos CORS para o navegador poder chamar
   const headers = {
@@ -110,15 +156,26 @@ exports.handler = async (event) => {
       return { statusCode: 500, headers, body: JSON.stringify({ error: 'Chave de API não configurada' }) };
     }
 
+    // identifica o visitante pelo IP (pra strikes/ban persistentes)
+    const clientId = event.headers['x-nf-client-connection-ip']
+      || (event.headers['x-forwarded-for'] || '').split(',')[0].trim()
+      || 'desconhecido';
+
+    // já banido? bloqueia direto, sem gastar tokens
+    const modRec = await getModeration(clientId);
+    if (modRec && modRec.banned) {
+      return { statusCode: 200, headers, body: JSON.stringify({ moderation: { violacao: false, banned: true, strikes: modRec.strikes } }) };
+    }
+
     // ── M.I.S.S: modera a última mensagem do cliente ANTES de responder ──
     const lastUser = [...messages].reverse().find(m => m.role === 'user');
     const userText = lastUser && typeof lastUser.content === 'string' ? lastUser.content : '';
     const verdict = await moderate(userText, API_KEY);
     if (verdict.violacao) {
-      // Violou → não gasta tokens gerando resposta de venda. Devolve só o veredito;
-      // o front conta os strikes (sessionStorage) e decide aviso ou ban.
-      console.log('M.I.S.S bloqueou (camada ' + verdict.camada + '):', verdict.motivo);
-      return { statusCode: 200, headers, body: JSON.stringify({ moderation: verdict }) };
+      // Violou → registra o strike no banco e decide aviso/ban. Não gasta tokens com a Nayra.
+      const { strikes, banned } = await registerViolation(clientId, modRec, verdict.motivo);
+      console.log('M.I.S.S violação (camada ' + verdict.camada + '):', verdict.motivo, '| strikes:', strikes, '| banido:', banned);
+      return { statusCode: 200, headers, body: JSON.stringify({ moderation: { violacao: true, banned, strikes, motivo: verdict.motivo } }) };
     }
 
     // ── PERSONALIDADE E REGRAS DA NAYRA ──
