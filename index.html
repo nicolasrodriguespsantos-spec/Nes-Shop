@@ -596,7 +596,7 @@ const Nayra = {
       if (/(primeiro|1)/.test(q)) target = this.memory.mentioned[0];
       else if (/(segundo|2)/.test(q)) target = this.memory.mentioned[1];
       else if (/(terceiro|3)/.test(q)) target = this.memory.mentioned[2];
-            else if (/(ultimo|recente)/.test(q)) target = this.memory.mentioned[this.memory.mentioned.length-1];
+      else if (/(ultimo|recente)/.test(q)) target = this.memory.mentioned[this.memory.mentioned.length-1];
       else target = this.memory.focusProduct || this.memory.mentioned[0];
 
       // Se pediu por categoria específica (ex: "primeiro brinquedo")
@@ -952,11 +952,12 @@ function checkout() {
   renderCart();
 }
 
-// ── M.I.S.S — moderação (contagem e ban agora são no SERVIDOR + banco) ──
+// ── M.I.S.S — moderação (Supabase é o ÚNICO dono do ban) ──
 // O nayra.js + Supabase decidem strikes e ban por IP. O front só mostra
-// o que o servidor mandar. Guardamos um flag local só pra travar a tela
-// na hora — a autoridade é sempre o servidor.
-function missIsBanned() { return localStorage.getItem('nes_miss_banned') === '1'; }
+// o que o servidor mandar e trava a tela na sessão atual (memória, não
+// localStorage). Reset pra testar = apagar a linha no Supabase + recarregar (F5).
+let missBannedSession = false;
+function missIsBanned() { return missBannedSession; }
 
 function missBanUI() {
   const input = document.getElementById('chatInput');
@@ -980,8 +981,8 @@ function handleModeration(m) {
     conversationHistory.pop();
   }
   if (m.banned) {
-    localStorage.setItem('nes_miss_banned', '1');
-    addNayraMessage('Encerrei o atendimento nesta sessão. 🙏', []);
+    missBannedSession = true;
+    addNayraMessage('Encerrei o atendimento por aqui. 🙏', []);
     missBanUI();
     return;
   }
