@@ -151,7 +151,7 @@ exports.handler = async (event) => {
   }
 
   try {
-    const { messages, catalog, testToken } = JSON.parse(event.body || '{}');
+    const { messages, catalog, testToken, moderateOnly } = JSON.parse(event.body || '{}');
 
     if (!messages || !Array.isArray(messages)) {
       return { statusCode: 400, headers, body: JSON.stringify({ error: 'Mensagens inválidas' }) };
@@ -183,6 +183,10 @@ exports.handler = async (event) => {
     const lastUser = [...messages].reverse().find(m => m.role === 'user');
     const userText = lastUser && typeof lastUser.content === 'string' ? lastUser.content : '';
     const verdict = await moderate(userText, API_KEY);
+    // modo teste só-moderação (red-team do M.I.S.S): devolve o veredito e para aqui, sem chamar a Nayra.
+    if (testMode && moderateOnly) {
+      return { statusCode: 200, headers, body: JSON.stringify({ moderation: { violacao: verdict.violacao, motivo: verdict.motivo, severidade: verdict.severidade, camada: verdict.camada, shadow: true } }) };
+    }
     let shadow = null;
     if (verdict.violacao) {
       if (testMode) {
