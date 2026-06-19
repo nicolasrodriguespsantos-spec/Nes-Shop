@@ -151,7 +151,7 @@ exports.handler = async (event) => {
   }
 
   try {
-    const { messages, catalog } = JSON.parse(event.body || '{}');
+    const { messages, catalog, testToken } = JSON.parse(event.body || '{}');
 
     if (!messages || !Array.isArray(messages)) {
       return { statusCode: 400, headers, body: JSON.stringify({ error: 'Mensagens inválidas' }) };
@@ -163,13 +163,18 @@ exports.handler = async (event) => {
       return { statusCode: 500, headers, body: JSON.stringify({ error: 'Chave de API não configurada' }) };
     }
 
+    // MODO TESTE (red-team): só ativa se o token bater com a env var REDTEAM_SECRET.
+    // Em modo teste o M.I.S.S vira "sombra": avalia e reporta, mas NÃO registra strike,
+    // NÃO bane e NÃO bloqueia — assim dá pra testar à vontade sem se autobanir.
+    const testMode = !!testToken && testToken === process.env.REDTEAM_SECRET;
+
     // identifica o visitante pelo IP (pra strikes/ban persistentes)
     const clientId = event.headers['x-nf-client-connection-ip']
       || (event.headers['x-forwarded-for'] || '').split(',')[0].trim()
       || 'desconhecido';
 
-    // já banido? bloqueia direto, sem gastar tokens
-    const modRec = await getModeration(clientId);
+    // já banido? bloqueia direto, sem gastar tokens (em modo teste, ignora o ban)
+    const modRec = testMode ? null : await getModeration(clientId);
     if (modRec && modRec.banned) {
       return { statusCode: 200, headers, body: JSON.stringify({ moderation: { violacao: false, banned: true, strikes: modRec.strikes } }) };
     }
@@ -178,11 +183,18 @@ exports.handler = async (event) => {
     const lastUser = [...messages].reverse().find(m => m.role === 'user');
     const userText = lastUser && typeof lastUser.content === 'string' ? lastUser.content : '';
     const verdict = await moderate(userText, API_KEY);
+    let shadow = null;
     if (verdict.violacao) {
-      // Violou → registra o strike no banco e decide aviso/ban. Não gasta tokens com a Nayra.
-      const { strikes, banned } = await registerViolation(clientId, modRec, verdict.motivo);
-      console.log('M.I.S.S violação (camada ' + verdict.camada + '):', verdict.motivo, '| strikes:', strikes, '| banido:', banned);
-      return { statusCode: 200, headers, body: JSON.stringify({ moderation: { violacao: true, banned, strikes, motivo: verdict.motivo } }) };
+      if (testMode) {
+        // modo sombra: anota o que o M.I.S.S FARIA, mas não pune nem bloqueia — deixa a Nayra responder.
+        shadow = { violacao: true, motivo: verdict.motivo, severidade: verdict.severidade, camada: verdict.camada, shadow: true };
+        console.log('M.I.S.S [SOMBRA/teste] sinalizaria (camada ' + verdict.camada + '):', verdict.motivo);
+      } else {
+        // produção: registra o strike no banco e decide aviso/ban. Não gasta tokens com a Nayra.
+        const { strikes, banned } = await registerViolation(clientId, modRec, verdict.motivo);
+        console.log('M.I.S.S violação (camada ' + verdict.camada + '):', verdict.motivo, '| strikes:', strikes, '| banido:', banned);
+        return { statusCode: 200, headers, body: JSON.stringify({ moderation: { violacao: true, banned, strikes, motivo: verdict.motivo } }) };
+      }
     }
 
     // ── PERSONALIDADE E REGRAS DA NAYRA ──
@@ -256,7 +268,7 @@ Responda sempre como a Nayra, de forma natural e humana.`;
     return {
       statusCode: 200,
       headers,
-      body: JSON.stringify({ reply, moderation: { violacao: false } })
+      body: JSON.stringify({ reply, moderation: shadow || { violacao: false } })
     };
 
   } catch (err) {
