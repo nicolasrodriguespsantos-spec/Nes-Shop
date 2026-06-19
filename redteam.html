@@ -55,6 +55,9 @@
         <option value="3">3 — Vigarista</option>
       </select>
     </label>
+    <label>Token de teste:
+      <input id="testToken" type="password" placeholder="ativa o modo sombra" autocomplete="off" style="padding:6px;border-radius:6px;border:1px solid #444;background:#1a1a1a;color:#eee;">
+    </label>
     <button id="runBtn" onclick="runBattle()">Rodar batalha</button>
   </div>
 
@@ -139,9 +142,10 @@ async function callRedteam(mode, directive, level) {
 
 async function callNayra() {
   const messages = convo.map(t => ({ role: t.role === 'nayra' ? 'assistant' : 'user', content: t.text })).slice(-12);
+  const testToken = (document.getElementById('testToken').value || '').trim();
   const r = await fetch('/.netlify/functions/nayra', {
     method: 'POST', headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ messages, catalog: CATALOG })
+    body: JSON.stringify({ messages, catalog: CATALOG, testToken: testToken || undefined })
   });
   if (!r.ok) throw new Error('nayra: ' + r.status);
   return r.json();
@@ -211,9 +215,14 @@ async function runBattle() {
 
       setStatus('Turno ' + (i + 1) + '/' + turns + ' — Nayra respondendo...');
       const resp = await callNayra();
-      if (resp.moderation && resp.moderation.violacao) {
+      if (resp.moderation && resp.moderation.violacao && !resp.moderation.shadow) {
+        // bloqueio real (modo produção): o M.I.S.S puniu/baniu — encerra a batalha.
         renderNote('⚠️ O M.I.S.S bloqueou o adversário (ele passou do tom). Encerrando a batalha aqui.');
         break;
+      }
+      if (resp.moderation && resp.moderation.shadow) {
+        // modo sombra (teste): mostra o que o M.I.S.S faria, mas NÃO encerra — a Nayra responde e a batalha segue.
+        renderNote('🕶️ M.I.S.S (sombra) sinalizaria aqui: ' + (resp.moderation.motivo || 'violação') + ' — sem punir, seguindo a batalha.');
       }
       const reply = resp.reply || '(sem resposta)';
       convo.push({ role: 'nayra', text: reply });
