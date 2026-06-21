@@ -1,0 +1,332 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>PULSE · Radar de Demanda — N.E.S Shop</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0a0a0b; --surface:#141417; --surface-2:#1b1b20; --line:#26262c;
+    --ink:#ededf0; --muted:#8b8b94; --faint:#5a5a62;
+    --gold:#d4af37; --gold-bright:#e8c860;
+    --urgent:#e5484d; --sourcing:#d4af37; --vitrine:#46b974;
+    --r:14px;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--bg);color:var(--ink);font-family:Inter,system-ui,sans-serif}
+  body{-webkit-font-smoothing:antialiased}
+  a{color:inherit}
+  .wrap{max-width:1180px;margin:0 auto;padding:28px 22px 80px}
+
+  /* ── topo ── */
+  header.top{display:flex;align-items:baseline;justify-content:space-between;gap:16px;flex-wrap:wrap;
+    border-bottom:1px solid var(--line);padding-bottom:18px;margin-bottom:30px}
+  .brand{display:flex;align-items:baseline;gap:12px}
+  .brand h1{font-family:'Space Grotesk';font-weight:700;font-size:26px;letter-spacing:.16em;margin:0;
+    background:linear-gradient(180deg,var(--gold-bright),var(--gold));-webkit-background-clip:text;background-clip:text;color:transparent}
+  .brand .sub{color:var(--muted);font-size:13px;letter-spacing:.02em}
+  .top-right{display:flex;align-items:center;gap:14px;color:var(--faint);font-size:12.5px}
+  button.refresh{background:var(--surface-2);border:1px solid var(--line);color:var(--ink);
+    font-family:Inter;font-size:13px;padding:8px 14px;border-radius:9px;cursor:pointer;transition:border-color .15s,background .15s}
+  button.refresh:hover{border-color:var(--gold);background:#202026}
+  button.refresh:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+
+  /* ── hero: pedidos faltantes ── */
+  .hero{background:
+      radial-gradient(120% 140% at 100% 0%, rgba(212,175,55,.08), transparent 60%),
+      var(--surface);
+    border:1px solid var(--line);border-radius:var(--r);padding:30px 32px;margin-bottom:34px;
+    display:flex;align-items:flex-end;justify-content:space-between;gap:24px;flex-wrap:wrap}
+  .hero .big{font-family:'Space Grotesk';font-weight:700;font-size:clamp(48px,9vw,84px);line-height:.9;
+    color:var(--gold-bright);letter-spacing:-.02em}
+  .hero .big.zero{color:var(--faint)}
+  .hero .lbl{margin-top:10px;color:var(--ink);font-size:15px;font-weight:500}
+  .hero .lbl span{color:var(--muted);font-weight:400}
+  .hero .mini{display:flex;gap:26px;text-align:right}
+  .hero .mini div b{font-family:'Space Grotesk';display:block;font-size:24px;color:var(--ink)}
+  .hero .mini div small{color:var(--faint);font-size:11.5px;letter-spacing:.04em;text-transform:uppercase}
+
+  /* ── colunas de ranking ── */
+  .cols{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+  @media(max-width:880px){.cols{grid-template-columns:1fr}}
+  .col{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
+  .col h2{font-family:Inter;font-weight:600;font-size:13px;letter-spacing:.04em;margin:0;padding:16px 18px;
+    display:flex;align-items:center;gap:9px;border-bottom:1px solid var(--line)}
+  .dot{width:9px;height:9px;border-radius:50%;flex:none}
+  .col.urgent h2 .dot{background:var(--urgent)} .col.urgent h2{color:#f7a8aa}
+  .col.sourcing h2 .dot{background:var(--sourcing)} .col.sourcing h2{color:var(--gold-bright)}
+  .col.vitrine h2 .dot{background:var(--vitrine)} .col.vitrine h2{color:#86d6a6}
+  .col .hint{padding:0 18px;color:var(--faint);font-size:11.5px;margin:10px 0 6px}
+
+  ul.rank{list-style:none;margin:0;padding:6px 8px 12px}
+  li.row{display:flex;align-items:center;gap:12px;padding:11px 10px;border-radius:10px;cursor:pointer;
+    transition:background .12s}
+  li.row:hover{background:var(--surface-2)}
+  li.row:focus-visible{outline:2px solid var(--gold);outline-offset:-2px}
+  .rk{font-family:'Space Grotesk';color:var(--faint);font-size:13px;width:18px;text-align:center;flex:none}
+  .nm{flex:1;font-size:14px;line-height:1.3}
+  .ppl{font-family:'Space Grotesk';font-size:15px;color:var(--ink)}
+  .ppl small{color:var(--faint);font-size:11px;font-family:Inter;margin-left:3px}
+  .heat{font-size:10px;letter-spacing:.06em;text-transform:uppercase;padding:2px 7px;border-radius:20px;flex:none}
+  .heat.hot{background:rgba(229,72,77,.16);color:#f7a8aa}
+  .heat.warm{background:rgba(212,175,55,.14);color:var(--gold-bright)}
+  .heat.cold{background:#22222a;color:var(--muted)}
+  .empty{padding:24px 18px;color:var(--faint);font-size:13px;line-height:1.5}
+
+  /* ── drawer de detalhe ── */
+  .scrim{position:fixed;inset:0;background:rgba(0,0,0,.6);opacity:0;pointer-events:none;transition:opacity .2s;z-index:40}
+  .scrim.on{opacity:1;pointer-events:auto}
+  .drawer{position:fixed;top:0;right:0;height:100%;width:min(480px,92vw);background:var(--surface);
+    border-left:1px solid var(--line);transform:translateX(100%);transition:transform .24s ease;z-index:50;
+    overflow-y:auto;padding:26px 26px 60px}
+  .drawer.on{transform:none}
+  @media(prefers-reduced-motion:reduce){.drawer,.scrim{transition:none}}
+  .drawer .x{position:absolute;top:18px;right:20px;background:none;border:0;color:var(--muted);font-size:24px;cursor:pointer;line-height:1}
+  .drawer .x:hover{color:var(--ink)}
+  .d-status{font-size:11px;letter-spacing:.06em;text-transform:uppercase;padding:3px 9px;border-radius:20px;display:inline-block;margin-bottom:14px}
+  .d-status.NOT_IN_CATALOG{background:rgba(212,175,55,.14);color:var(--gold-bright)}
+  .d-status.OUT_OF_STOCK{background:rgba(229,72,77,.16);color:#f7a8aa}
+  .d-status.IN_STOCK{background:rgba(70,185,116,.16);color:#86d6a6}
+  .drawer h3{font-family:'Space Grotesk';font-weight:700;font-size:24px;margin:0 0 6px;line-height:1.15}
+  .d-meta{color:var(--faint);font-size:12.5px;margin-bottom:22px}
+  .d-stats{display:flex;gap:26px;margin-bottom:24px}
+  .d-stats div b{font-family:'Space Grotesk';display:block;font-size:26px;color:var(--gold-bright)}
+  .d-stats div small{color:var(--faint);font-size:11px;text-transform:uppercase;letter-spacing:.04em}
+  .d-sec{font-size:12px;color:var(--muted);letter-spacing:.05em;text-transform:uppercase;margin:0 0 12px}
+  .bars{display:flex;align-items:flex-end;gap:6px;height:80px;margin-bottom:28px}
+  .bars .bar{flex:1;background:var(--surface-2);border-radius:4px 4px 0 0;position:relative;min-height:3px;
+    background:linear-gradient(180deg,var(--gold),rgba(212,175,55,.35))}
+  .bars .bar span{position:absolute;bottom:-18px;left:0;right:0;text-align:center;color:var(--faint);font-size:9px}
+  .variants{list-style:none;margin:0 0 10px;padding:0}
+  .variants li{display:flex;justify-content:space-between;gap:12px;padding:9px 0;border-bottom:1px solid var(--line);font-size:13.5px;color:var(--ink)}
+  .variants li small{color:var(--faint);font-family:'Space Grotesk'}
+  .qc{color:var(--faint);font-size:11.5px;line-height:1.5;margin-top:6px}
+
+  /* ── gate de login ── */
+  .gate{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:90;padding:20px}
+  .gate .box{width:min(360px,100%);text-align:center}
+  .gate h1{font-family:'Space Grotesk';font-weight:700;letter-spacing:.18em;font-size:30px;margin:0 0 6px;
+    background:linear-gradient(180deg,var(--gold-bright),var(--gold));-webkit-background-clip:text;background-clip:text;color:transparent}
+  .gate p{color:var(--muted);font-size:13px;margin:0 0 22px}
+  .gate input{width:100%;background:var(--surface);border:1px solid var(--line);border-radius:10px;
+    color:var(--ink);font-size:15px;padding:13px 14px;margin-bottom:12px;font-family:Inter}
+  .gate input:focus{outline:none;border-color:var(--gold)}
+  .gate button{width:100%;background:linear-gradient(180deg,var(--gold-bright),var(--gold));border:0;color:#1a1500;
+    font-weight:600;font-size:15px;padding:13px;border-radius:10px;cursor:pointer;font-family:Inter}
+  .gate .err{color:var(--urgent);font-size:13px;min-height:18px;margin-top:4px}
+  .hidden{display:none!important}
+</style>
+</head>
+<body>
+
+<!-- GATE -->
+<div class="gate" id="gate">
+  <div class="box">
+    <h1>PULSE</h1>
+    <p>Radar de demanda · acesso restrito</p>
+    <input id="pw" type="password" placeholder="senha de acesso" autocomplete="current-password" autofocus>
+    <button id="enter">Entrar</button>
+    <div class="err" id="gateErr"></div>
+  </div>
+</div>
+
+<!-- APP -->
+<div class="wrap hidden" id="app">
+  <header class="top">
+    <div class="brand">
+      <h1>PULSE</h1>
+      <span class="sub">Radar de demanda · N.E.S Shop</span>
+    </div>
+    <div class="top-right">
+      <span id="updated"></span>
+      <button class="refresh" id="refresh">Atualizar</button>
+    </div>
+  </header>
+
+  <section class="hero">
+    <div>
+      <div class="big" id="lostBig">—</div>
+      <div class="lbl">Pedidos faltantes <span>· demanda que escapou por falta de produto</span></div>
+    </div>
+    <div class="mini">
+      <div><b id="mConcepts">—</b><small>produtos pedidos</small></div>
+      <div><b id="mMentions">—</b><small>perguntas totais</small></div>
+    </div>
+  </section>
+
+  <div class="cols">
+    <div class="col urgent">
+      <h2><span class="dot"></span>Reposição urgente</h2>
+      <div class="hint">Você vende, mas está zerado. Venda escapando agora.</div>
+      <ul class="rank" id="rankUrgent"></ul>
+    </div>
+    <div class="col sourcing">
+      <h2><span class="dot"></span>Oportunidades de sourcing</h2>
+      <div class="hint">Não está no catálogo. Sua lista de compras.</div>
+      <ul class="rank" id="rankSourcing"></ul>
+    </div>
+    <div class="col vitrine">
+      <h2><span class="dot"></span>Campeões da vitrine</h2>
+      <div class="hint">Tem em estoque e bombando. Candidatos a destaque.</div>
+      <ul class="rank" id="rankVitrine"></ul>
+    </div>
+  </div>
+</div>
+
+<!-- DRAWER -->
+<div class="scrim" id="scrim"></div>
+<aside class="drawer" id="drawer" aria-hidden="true"></aside>
+
+<script>
+const API = '/.netlify/functions/pulse-data'; // mesmo site da Netlify → caminho relativo
+let AUTH = '';   // mantido só em memória; recarregar pede a senha de novo
+let INDEX = null;
+
+const $ = (s) => document.querySelector(s);
+const STATUS_LABEL = { NOT_IN_CATALOG:'não temos no catálogo', OUT_OF_STOCK:'zerado em estoque', IN_STOCK:'em estoque' };
+
+function heatLabel(h){
+  const total = h.cold+h.warm+h.hot || 1;
+  if (h.hot/total >= .34) return 'hot';
+  if (h.cold/total >= .5) return 'cold';
+  return 'warm';
+}
+
+// ── login ──
+async function tryLogin(pw){
+  const r = await fetch(API + '?token=' + encodeURIComponent(pw));
+  if (r.status === 401) return false;
+  if (!r.ok) throw new Error('servidor indisponível');
+  AUTH = pw;
+  INDEX = await r.json();
+  return true;
+}
+$('#enter').onclick = doLogin;
+$('#pw').addEventListener('keydown', (e)=>{ if(e.key==='Enter') doLogin(); });
+async function doLogin(){
+  const pw = $('#pw').value.trim();
+  $('#gateErr').textContent = '';
+  if(!pw) return;
+  try{
+    const ok = await tryLogin(pw);
+    if(!ok){ $('#gateErr').textContent = 'senha incorreta'; return; }
+    $('#gate').classList.add('hidden');
+    $('#app').classList.remove('hidden');
+    render();
+  }catch(err){
+    $('#gateErr').textContent = 'Não consegui falar com o servidor. Está publicado na Netlify?';
+  }
+}
+
+// ── refresh ──
+$('#refresh').onclick = async ()=>{
+  try{
+    const r = await fetch(API + '?token=' + encodeURIComponent(AUTH));
+    INDEX = await r.json();
+    render();
+  }catch{}
+};
+
+// ── render ──
+function render(){
+  const c = (INDEX && INDEX.concepts) ? INDEX.concepts : [];
+  const urgent  = c.filter(x=>x.current_status==='OUT_OF_STOCK');
+  const source  = c.filter(x=>x.current_status==='NOT_IN_CATALOG');
+  const vitrine = c.filter(x=>x.current_status==='IN_STOCK');
+
+  // hero: pedidos faltantes = pessoas que pediram algo não vendável (zerado + fora do catálogo)
+  const lost = [...urgent, ...source].reduce((s,x)=>s+(x.unique_people||0),0);
+  const big = $('#lostBig');
+  big.textContent = lost.toLocaleString('pt-BR');
+  big.classList.toggle('zero', lost===0);
+  $('#mConcepts').textContent = c.length.toLocaleString('pt-BR');
+  $('#mMentions').textContent = c.reduce((s,x)=>s+(x.total_mentions||0),0).toLocaleString('pt-BR');
+  if(INDEX && INDEX.updated_at){
+    $('#updated').textContent = 'atualizado ' + new Date(INDEX.updated_at).toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
+  }
+
+  fillRank('#rankUrgent', urgent, 'Nada zerado e procurado ainda.');
+  fillRank('#rankSourcing', source, 'Nenhum pedido de produto novo ainda.');
+  fillRank('#rankVitrine', vitrine, 'Sem campeões registrados ainda.');
+}
+
+function fillRank(sel, list, emptyMsg){
+  const ul = $(sel);
+  ul.innerHTML = '';
+  list.sort((a,b)=>(b.unique_people||0)-(a.unique_people||0));
+  if(list.length===0){
+    ul.innerHTML = '<div class="empty">'+emptyMsg+'</div>';
+    return;
+  }
+  list.slice(0,15).forEach((x,i)=>{
+    const hl = heatLabel(x.heat||{cold:0,warm:0,hot:0});
+    const li = document.createElement('li');
+    li.className='row'; li.tabIndex=0;
+    li.innerHTML =
+      '<span class="rk">'+(i+1)+'</span>'+
+      '<span class="nm">'+escapeHtml(x.name)+'</span>'+
+      '<span class="heat '+hl+'">'+hl+'</span>'+
+      '<span class="ppl">'+(x.unique_people||0)+'<small>pess.</small></span>';
+    li.onclick = ()=>openDetail(x.id);
+    li.onkeydown = (e)=>{ if(e.key==='Enter') openDetail(x.id); };
+    ul.appendChild(li);
+  });
+}
+
+// ── detalhe ──
+async function openDetail(id){
+  const d = $('#drawer');
+  d.innerHTML = '<button class="x" id="closeX">×</button><p class="d-meta">carregando…</p>';
+  $('#closeX').onclick = closeDetail;
+  $('#scrim').classList.add('on'); d.classList.add('on'); d.setAttribute('aria-hidden','false');
+  let c;
+  try{
+    const r = await fetch(API + '?token=' + encodeURIComponent(AUTH) + '&id=' + encodeURIComponent(id));
+    c = await r.json();
+  }catch{ d.innerHTML += '<p class="d-meta">erro ao carregar.</p>'; return; }
+
+  const weeks = Object.keys(c.weekly||{}).sort().slice(-8);
+  const max = Math.max(1, ...weeks.map(w=>c.weekly[w]));
+  const bars = weeks.map(w=>{
+    const h = Math.round((c.weekly[w]/max)*100);
+    return '<div class="bar" style="height:'+h+'%"><span>'+w.split('-W')[1]+'</span></div>';
+  }).join('') || '<p class="qc">Sem histórico semanal ainda.</p>';
+
+  const variants = (c.variants||[]).sort((a,b)=>b.count-a.count).slice(0,12).map(v=>
+    '<li><span>'+escapeHtml(v.text)+'</span><small>'+v.count+'×</small></li>'
+  ).join('');
+
+  d.innerHTML =
+    '<button class="x" id="closeX">×</button>'+
+    '<span class="d-status '+c.current_status+'">'+STATUS_LABEL[c.current_status]+'</span>'+
+    '<h3>'+escapeHtml(c.name)+'</h3>'+
+    '<p class="d-meta">'+escapeHtml(c.category||'Geral')+' · 1ª vez '+fmt(c.first_seen)+' · última '+fmt(c.last_seen)+'</p>'+
+    '<div class="d-stats">'+
+      '<div><b>'+(c.unique_people||0)+'</b><small>pessoas</small></div>'+
+      '<div><b>'+(c.total_mentions||0)+'</b><small>perguntas</small></div>'+
+    '</div>'+
+    '<p class="d-sec">Perguntas por semana</p>'+
+    '<div class="bars">'+bars+'</div>'+
+    '<p class="d-sec">Como as pessoas pediram</p>'+
+    '<ul class="variants">'+variants+'</ul>'+
+    '<p class="qc">Esta lista é o controle de qualidade da IA: se algo foi agrupado errado, dá pra ver aqui.</p>';
+  $('#closeX').onclick = closeDetail;
+}
+function closeDetail(){
+  $('#scrim').classList.remove('on');
+  $('#drawer').classList.remove('on');
+  $('#drawer').setAttribute('aria-hidden','true');
+}
+$('#scrim').onclick = closeDetail;
+document.addEventListener('keydown',(e)=>{ if(e.key==='Escape') closeDetail(); });
+
+// ── utils ──
+function fmt(iso){ try{ return new Date(iso).toLocaleDateString('pt-BR',{day:'2-digit',month:'short'}); }catch{ return '—'; } }
+function escapeHtml(s){ return String(s||'').replace(/[&<>"']/g,(m)=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
+</script>
+</body>
+</html>
