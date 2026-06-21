@@ -132,6 +132,85 @@ async function registerViolation(clientId, existing, reason) {
   return { strikes, banned };
 }
 
+// ═══════════════════════════════════════════════════════════
+//  PULSE — registro de demanda (radar do que o cliente procura)
+//  Sem o STOCK ainda, a Nayra só conhece DUAS verdades sobre um produto:
+//    • está no catálogo  → IN_STOCK
+//    • não está          → NOT_IN_CATALOG
+//  Ela NUNCA inventa OUT_OF_STOCK — isso só quando o STOCK existir.
+// ═══════════════════════════════════════════════════════════
+const PULSE_MODEL = 'claude-haiku-4-5';
+
+// Extrai a demanda da última mensagem do cliente, usando o catálogo como referência.
+// Devolve null quando não há intenção de produto (cumprimento, agradecimento, etc.),
+// pra não poluir o PULSE com ruído.
+async function extrairDemanda(messages, catalog, apiKey) {
+  if (!catalog) return null;
+  const recent = messages.slice(-4)
+    .map(m => (m.role === 'user' ? 'Cliente: ' : 'Nayra: ') + (typeof m.content === 'string' ? m.content : ''))
+    .join('\n');
+
+  const sys = `Você analisa uma conversa de loja e extrai a DEMANDA do cliente por produtos.
+Use o CATÁLOGO abaixo para decidir se o que o cliente quer está disponível.
+
+CATÁLOGO:
+${catalog}
+
+Responda SOMENTE com JSON válido, sem markdown, sem texto extra:
+{"tem_produto": true/false, "produto": "nome curto e canônico em português", "esta_no_catalogo": true/false, "temperatura": "cold"/"warm"/"hot"}
+
+Regras:
+- tem_produto=false (e produto="") se o cliente só cumprimentou, agradeceu, reclamou de forma geral, negociou preço sem citar um produto, ou falou de assunto fora de produtos.
+- tem_produto=true se o cliente perguntou sobre ou demonstrou interesse em um produto específico — mesmo que NÃO esteja no catálogo.
+- esta_no_catalogo=true apenas se o produto aparece no catálogo acima.
+- temperatura: "hot" se perguntou preço/prazo/pagamento ou disse querer comprar; "warm" se perguntou características/comparou/demonstrou interesse claro; "cold" se só mencionou de passagem.
+- Resolva "esse"/"ele" usando o histórico da conversa.`;
+
+  let resp;
+  try {
+    resp = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey, 'anthropic-version': '2023-06-01' },
+      body: JSON.stringify({
+        model: PULSE_MODEL, max_tokens: 150, system: sys,
+        messages: [{ role: 'user', content: 'Conversa recente:\n' + recent + '\n\nExtraia a demanda da ÚLTIMA mensagem do Cliente.' }]
+      })
+    });
+  } catch (e) { console.error('PULSE extração — rede:', e); return null; }
+  if (!resp.ok) { console.error('PULSE extração — API:', await resp.text()); return null; }
+  try {
+    const data = await resp.json();
+    console.log('PULSE extração usage:', JSON.stringify(data.usage));
+    const txt = (data.content?.[0]?.text || '').replace(/```json|```/g, '').trim();
+    const v = JSON.parse(txt);
+    if (!v || !v.tem_produto) return null;
+    return {
+      produto: String(v.produto || '').slice(0, 80),
+      esta_no_catalogo: !!v.esta_no_catalogo,
+      temperatura: ['cold', 'warm', 'hot'].includes(v.temperatura) ? v.temperatura : 'warm'
+    };
+  } catch (e) { console.error('PULSE extração — JSON inválido:', e); return null; }
+}
+
+// Envia o registro pro pulse-ingest. À prova de falha e com timeout curto,
+// pra NUNCA travar nem quebrar a resposta da Nayra (ela é só um observador).
+async function registrarNoPulse(baseUrl, payload) {
+  const ctrl = new AbortController();
+  const t = setTimeout(() => ctrl.abort(), 4000);
+  try {
+    await fetch(baseUrl + '/.netlify/functions/pulse-ingest', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+      signal: ctrl.signal
+    });
+  } catch (e) {
+    console.error('PULSE registro falhou (ignorado):', e.name === 'AbortError' ? 'timeout' : e);
+  } finally {
+    clearTimeout(t);
+  }
+}
+
 exports.handler = async (event) => {
   // Cabeçalhos CORS para o navegador poder chamar
   const headers = {
@@ -201,6 +280,15 @@ exports.handler = async (event) => {
       }
     }
 
+    // ── PULSE: inicia a extração da demanda EM PARALELO (não atrasa a resposta) ──
+    // O Netlify preenche process.env.URL com a URL do site; fallback pelo cabeçalho.
+    const pulseBaseUrl = process.env.URL
+      || ((event.headers['x-forwarded-proto'] || 'https') + '://' + (event.headers['x-forwarded-host'] || event.headers.host || ''));
+    // Em modo teste (red-team) NÃO registramos no PULSE, pra não sujar a demanda real.
+    const demandaPromise = (!testMode && userText && userText.trim().length > 1)
+      ? extrairDemanda(messages, catalog, API_KEY).catch(() => null)
+      : Promise.resolve(null);
+
     // ── PERSONALIDADE E REGRAS DA NAYRA ──
     const systemPrompt = `Você é a Nayra, assistente de vendas virtual da N.E.S Shop, uma loja online brasileira.
 
@@ -268,6 +356,23 @@ Responda sempre como a Nayra, de forma natural e humana.`;
     // ── medição de peso (cache_*_input_tokens e input/output) no log do Netlify ──
     console.log('Nayra usage:', JSON.stringify(data.usage));
     const reply = data.content?.[0]?.text || 'Desculpe, não consegui processar agora.';
+
+    // ── PULSE: com a resposta pronta, registra a demanda (sem travar nem quebrar nada) ──
+    if (!testMode) {
+      try {
+        const demanda = await demandaPromise;
+        if (demanda && pulseBaseUrl) {
+          await registrarNoPulse(pulseBaseUrl, {
+            raw_query: userText,                 // o que o cliente escreveu (vai pra tela de detalhe)
+            canonical_name: demanda.produto,     // nome limpo que a IA extraiu (dica de agrupamento)
+            confirmed: false,                    // (futuro) a Nayra confirmar o nome com o cliente
+            stock_status: demanda.esta_no_catalogo ? 'IN_STOCK' : 'NOT_IN_CATALOG',
+            intent_heat: demanda.temperatura,    // cold | warm | hot
+            session_id: clientId                 // mesmo IP do M.I.S.S → conta PESSOAS, não perguntas
+          });
+        }
+      } catch (e) { console.error('PULSE bloco (ignorado):', e); }
+    }
 
     return {
       statusCode: 200,
