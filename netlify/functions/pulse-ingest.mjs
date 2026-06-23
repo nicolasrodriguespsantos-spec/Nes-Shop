@@ -82,6 +82,8 @@ async function normalize(rawQuery, hintName, existingConcepts) {
     'Receberá a frase de um cliente e a lista de conceitos de produto já existentes. ' +
     'Decida se a frase se refere a um conceito EXISTENTE (mesmo produto, escrito de outro jeito) ou a um produto NOVO. ' +
     'Gere um nome canônico curto e comercial em português. ' +
+    'O cliente pode escrever em português, inglês ou espanhol — o nome canônico deve SEMPRE sair em português, ' +
+    'para o mesmo produto não se dividir por idioma (ex.: "porcelain cookware" e "olla de porcelana" → "jogo de panelas de porcelana"). ' +
     'Responda APENAS com JSON válido, sem markdown, sem cercas de código, sem texto extra. ' +
     'Schema: {"match": boolean, "id": string|null, "name": string, "category": string, "keywords": string[]}';
 
@@ -223,4 +225,3 @@ export default async (req) => {
 
   return json({ ok: true, id, name: concept.name, status: concept.current_status });
 };
-
