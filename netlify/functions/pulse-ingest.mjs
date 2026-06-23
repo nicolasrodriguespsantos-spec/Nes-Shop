@@ -192,10 +192,16 @@ export default async (req) => {
   }
   concept.unique_people = session_id ? concept.sessions.length : concept.unique_people + 1;
 
-  // variante (forma como pediram)
+  // variante (forma como pediram) — guarda só as 7 mais frequentes
   const vText = raw_query.trim().toLowerCase().slice(0, 120);
   const v = concept.variants.find((x) => x.text === vText);
-  if (v) v.count += 1; else concept.variants.push({ text: vText, count: 1 });
+  if (v) {
+    v.count += 1;
+  } else {
+    concept.variants.push({ text: vText, count: 1 });
+    // mantém só as 7 mais frequentes; as outras caem fora mas a contagem permanece em total_mentions
+    concept.variants.sort((a, b) => b.count - a.count).splice(7);
+  }
 
   // semana
   concept.weekly[week] = (concept.weekly[week] || 0) + 1;
