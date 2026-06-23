@@ -81,9 +81,17 @@ async function missLlmCheck(text, apiKey) {
 async function moderate(text, apiKey) {
   if (!text || !text.trim())
     return { violacao: false, severidade: 'leve', motivo: 'mensagem vazia', camada: 0 };
+  
+  // CAMADA 1 (NOVA): LLM contextual — roda primeiro, vê a intenção completa
+  const llmVerdict = await missLlmCheck(text, apiKey);
+  if (llmVerdict.violacao) return llmVerdict;
+  
+  // CAMADA 2 (NOVA): Regra burca — só roda se o LLM passou, funciona como backup
   const rule = missRuleCheck(text);
   if (rule) return rule;
-  return await missLlmCheck(text, apiKey);
+  
+  // Tudo passou
+  return { violacao: false, severidade: 'leve', motivo: 'ok', camada: 3 };
 }
 
 // ── M.I.S.S persistente (Supabase via REST, sem dependência npm) ──
