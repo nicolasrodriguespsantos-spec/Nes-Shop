@@ -220,6 +220,25 @@ async function registrarNoPulse(baseUrl, payload) {
   }
 }
 
+// Envia telemetria (saúde + números) pro metrics-ingest. À prova de falha, com timeout.
+async function enviarMetricas(baseUrl, counters, agents) {
+  if (!baseUrl) return;
+  const ctrl = new AbortController();
+  const t = setTimeout(() => ctrl.abort(), 3000);
+  try {
+    await fetch(baseUrl + '/.netlify/functions/metrics-ingest', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ counters, agents }),
+      signal: ctrl.signal
+    });
+  } catch (e) {
+    console.error('métricas falhou (ignorado):', e.name === 'AbortError' ? 'timeout' : e);
+  } finally {
+    clearTimeout(t);
+  }
+}
+
 exports.handler = async (event) => {
   // Cabeçalhos CORS para o navegador poder chamar
   const headers = {
@@ -261,9 +280,14 @@ exports.handler = async (event) => {
       || (event.headers['x-forwarded-for'] || '').split(',')[0].trim()
       || 'desconhecido';
 
+    // URL base do site (Netlify preenche process.env.URL; fallback pelo cabeçalho) — p/ PULSE e métricas
+    const baseUrl = process.env.URL
+      || ((event.headers['x-forwarded-proto'] || 'https') + '://' + (event.headers['x-forwarded-host'] || event.headers.host || ''));
+
     // já banido? bloqueia direto, sem gastar tokens (em modo teste, ignora o ban)
     const modRec = testMode ? null : await getModeration(clientId);
     if (modRec && modRec.banned) {
+      await enviarMetricas(baseUrl, { conversations: 1, blocked: 1 }, ['nayra', 'miss']);
       return { statusCode: 200, headers, body: JSON.stringify({ moderation: { violacao: false, banned: true, strikes: modRec.strikes } }) };
     }
 
@@ -285,16 +309,15 @@ exports.handler = async (event) => {
         // produção: registra o strike no banco e decide aviso/ban. Não gasta tokens com a Nayra.
         const { strikes, banned } = await registerViolation(clientId, modRec, verdict.motivo);
         console.log('M.I.S.S violação (camada ' + verdict.camada + '):', verdict.motivo, '| strikes:', strikes, '| banido:', banned);
+        await enviarMetricas(baseUrl, { conversations: 1, miss_flags: 1, strikes: 1, bans: banned ? 1 : 0, aux_calls: verdict.camada === 3 ? 1 : 0 }, ['nayra', 'miss']);
         return { statusCode: 200, headers, body: JSON.stringify({ moderation: { violacao: true, banned, strikes, motivo: verdict.motivo } }) };
       }
     }
 
     // ── PULSE: inicia a extração da demanda EM PARALELO (não atrasa a resposta) ──
-    // O Netlify preenche process.env.URL com a URL do site; fallback pelo cabeçalho.
-    const pulseBaseUrl = process.env.URL
-      || ((event.headers['x-forwarded-proto'] || 'https') + '://' + (event.headers['x-forwarded-host'] || event.headers.host || ''));
-    // Em modo teste (red-team) NÃO registramos no PULSE, pra não sujar a demanda real.
-    const demandaPromise = (!testMode && userText && userText.trim().length > 1)
+    // Em modo teste (red-team) NÃO registramos no PULSE/métricas, pra não sujar os números reais.
+    const extractionRan = !testMode && !!userText && userText.trim().length > 1 && !!catalog;
+    const demandaPromise = extractionRan
       ? extrairDemanda(messages, catalog, API_KEY).catch(() => null)
       : Promise.resolve(null);
 
@@ -360,6 +383,7 @@ Responda sempre como a Nayra, de forma natural e humana.`;
     if (!response.ok) {
       const errText = await response.text();
       console.error('Erro da API Anthropic:', errText);
+      if (!testMode) await enviarMetricas(baseUrl, { conversations: 1, errors: 1, aux_calls: (verdict.camada === 3 ? 1 : 0) + (extractionRan ? 1 : 0) }, ['nayra', 'miss']);
       return { statusCode: 502, headers, body: JSON.stringify({ error: 'fallback', detail: 'API indisponível' }) };
     }
 
@@ -368,21 +392,35 @@ Responda sempre como a Nayra, de forma natural e humana.`;
     console.log('Nayra usage:', JSON.stringify(data.usage));
     const reply = data.content?.[0]?.text || 'Desculpe, não consegui processar agora.';
 
-    // ── PULSE: com a resposta pronta, registra a demanda (sem travar nem quebrar nada) ──
+    // ── PULSE + MÉTRICAS: com a resposta pronta, registra demanda e telemetria ──
+    // Em paralelo, à prova de falha, com timeout. Pulado em modo teste pra não sujar os números.
     if (!testMode) {
       try {
         const demanda = await demandaPromise;
-        if (demanda && pulseBaseUrl) {
-          await registrarNoPulse(pulseBaseUrl, {
+        const pulseRegistered = !!(demanda && baseUrl);
+        const tarefas = [];
+        if (pulseRegistered) {
+          tarefas.push(registrarNoPulse(baseUrl, {
             raw_query: userText,                 // o que o cliente escreveu (vai pra tela de detalhe)
             canonical_name: demanda.produto,     // nome limpo que a IA extraiu (dica de agrupamento)
             confirmed: false,                    // (futuro) a Nayra confirmar o nome com o cliente
             stock_status: demanda.esta_no_catalogo ? 'IN_STOCK' : 'NOT_IN_CATALOG',
             intent_heat: demanda.temperatura,    // cold | warm | hot
             session_id: clientId                 // mesmo IP do M.I.S.S → conta PESSOAS, não perguntas
-          });
+          }));
         }
-      } catch (e) { console.error('PULSE bloco (ignorado):', e); }
+        const counters = {
+          conversations: 1,
+          nayra_in: data.usage?.input_tokens || 0,
+          nayra_out: data.usage?.output_tokens || 0,
+          aux_calls: (verdict.camada === 3 ? 1 : 0) + (extractionRan ? 1 : 0),
+          pulse_registered: pulseRegistered ? 1 : 0
+        };
+        const agentes = ['nayra', 'miss'];
+        if (pulseRegistered) agentes.push('pulse');
+        tarefas.push(enviarMetricas(baseUrl, counters, agentes));
+        await Promise.allSettled(tarefas);
+      } catch (e) { console.error('PULSE/métricas bloco (ignorado):', e); }
     }
 
     return {
@@ -393,6 +431,11 @@ Responda sempre como a Nayra, de forma natural e humana.`;
 
   } catch (err) {
     console.error('Erro na função Nayra:', err);
+    // registra o erro nas métricas (best-effort), recomputando a baseUrl com segurança
+    try {
+      const bu = process.env.URL || ((event.headers['x-forwarded-proto'] || 'https') + '://' + (event.headers['x-forwarded-host'] || event.headers.host || ''));
+      await enviarMetricas(bu, { errors: 1 }, ['nayra']);
+    } catch (_) {}
     // Sinaliza para o site usar o backup local
     return { statusCode: 500, headers, body: JSON.stringify({ error: 'fallback', detail: String(err) }) };
   }
