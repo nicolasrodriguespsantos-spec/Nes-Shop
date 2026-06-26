@@ -1,0 +1,272 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Centro de Comando · N.E.S Shop</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0a0a0b; --surface:#141417; --surface-2:#1b1b20; --line:#26262c;
+    --ink:#ededf0; --muted:#8b8b94; --faint:#5a5a62;
+    --gold:#d4af37; --gold-bright:#e8c860;
+    --ok:#46b974; --warn:#e8c860; --bad:#e5484d;
+    --r:14px;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--bg);color:var(--ink);font-family:Inter,system-ui,sans-serif}
+  .wrap{max-width:1180px;margin:0 auto;padding:28px 22px 80px}
+  header.top{display:flex;align-items:baseline;justify-content:space-between;gap:16px;flex-wrap:wrap;
+    border-bottom:1px solid var(--line);padding-bottom:18px;margin-bottom:26px}
+  .brand{display:flex;align-items:baseline;gap:12px}
+  .brand h1{font-family:'Space Grotesk';font-weight:700;font-size:22px;letter-spacing:.06em;margin:0;
+    background:linear-gradient(180deg,var(--gold-bright),var(--gold));-webkit-background-clip:text;background-clip:text;color:transparent}
+  .brand .sub{color:var(--muted);font-size:13px}
+  .top-right{display:flex;align-items:center;gap:14px;color:var(--faint);font-size:12.5px}
+  button.refresh{background:var(--surface-2);border:1px solid var(--line);color:var(--ink);font-size:13px;padding:8px 14px;border-radius:9px;cursor:pointer}
+  button.refresh:hover{border-color:var(--gold)}
+
+  .sec{font-size:12px;color:var(--muted);letter-spacing:.07em;text-transform:uppercase;margin:0 0 12px}
+  .grid{display:grid;gap:16px;margin-bottom:30px}
+  .g3{grid-template-columns:repeat(3,1fr)}
+  .g4{grid-template-columns:repeat(4,1fr)}
+  @media(max-width:820px){.g3,.g4{grid-template-columns:repeat(2,1fr)}}
+  @media(max-width:480px){.g3,.g4{grid-template-columns:1fr}}
+
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:18px 20px}
+  .card .lbl{color:var(--faint);font-size:11.5px;letter-spacing:.04em;text-transform:uppercase;margin-bottom:8px}
+  .card .num{font-family:'Space Grotesk';font-size:30px;line-height:1;color:var(--ink)}
+  .card .num.gold{color:var(--gold-bright)}
+  .card .foot{color:var(--muted);font-size:12px;margin-top:7px}
+
+  .agent{display:flex;align-items:center;gap:11px;padding:14px 18px;background:var(--surface);border:1px solid var(--line);border-radius:var(--r)}
+  .agent .dot{width:11px;height:11px;border-radius:50%;flex:none}
+  .agent .dot.ok{background:var(--ok);box-shadow:0 0 8px rgba(70,185,116,.5)}
+  .agent .dot.warn{background:var(--warn)}
+  .agent .dot.bad{background:var(--bad)}
+  .agent .dot.idle{background:var(--faint)}
+  .agent .nm{font-family:'Space Grotesk';font-size:15px;font-weight:500}
+  .agent .st{color:var(--muted);font-size:12px;margin-left:auto;text-align:right}
+
+  .bars{display:flex;align-items:flex-end;gap:7px;height:120px;padding:10px 4px 0}
+  .bars .bar{flex:1;background:linear-gradient(180deg,var(--gold),rgba(212,175,55,.3));border-radius:4px 4px 0 0;min-height:3px;position:relative}
+  .bars .bar span{position:absolute;bottom:-20px;left:0;right:0;text-align:center;color:var(--faint);font-size:9px}
+  .bars .bar b{position:absolute;top:-18px;left:0;right:0;text-align:center;color:var(--muted);font-size:10px;font-family:'Space Grotesk'}
+  .chartcard{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:18px 20px 34px;margin-bottom:30px}
+
+  ul.rank{list-style:none;margin:0;padding:0}
+  ul.rank li{display:flex;align-items:center;gap:11px;padding:10px 0;border-bottom:1px solid var(--line);font-size:14px}
+  ul.rank li:last-child{border-bottom:0}
+  ul.rank .rk{font-family:'Space Grotesk';color:var(--faint);width:18px;text-align:center}
+  ul.rank .nm{flex:1}
+  ul.rank .ppl{font-family:'Space Grotesk';color:var(--gold-bright)}
+  .two{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  @media(max-width:820px){.two{grid-template-columns:1fr}}
+  .note{color:var(--faint);font-size:11.5px;line-height:1.5;margin-top:10px}
+  .empty{color:var(--faint);font-size:13px;padding:8px 0}
+
+  .gate{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:90;padding:20px}
+  .gate .box{width:min(360px,100%);text-align:center}
+  .gate h1{font-family:'Space Grotesk';font-weight:700;letter-spacing:.1em;font-size:26px;margin:0 0 6px;
+    background:linear-gradient(180deg,var(--gold-bright),var(--gold));-webkit-background-clip:text;background-clip:text;color:transparent}
+  .gate p{color:var(--muted);font-size:13px;margin:0 0 22px}
+  .gate input{width:100%;background:var(--surface);border:1px solid var(--line);border-radius:10px;color:var(--ink);font-size:15px;padding:13px 14px;margin-bottom:12px}
+  .gate input:focus{outline:none;border-color:var(--gold)}
+  .gate button{width:100%;background:linear-gradient(180deg,var(--gold-bright),var(--gold));border:0;color:#1a1500;font-weight:600;font-size:15px;padding:13px;border-radius:10px;cursor:pointer}
+  .gate .err{color:var(--bad);font-size:13px;min-height:18px;margin-top:4px}
+  .hidden{display:none!important}
+</style>
+</head>
+<body>
+
+<div class="gate" id="gate">
+  <div class="box">
+    <h1>CENTRO DE COMANDO</h1>
+    <p>N.E.S Shop · acesso restrito</p>
+    <input id="pw" type="password" placeholder="senha de acesso" autofocus>
+    <button id="enter">Entrar</button>
+    <div class="err" id="gateErr"></div>
+  </div>
+</div>
+
+<div class="wrap hidden" id="app">
+  <header class="top">
+    <div class="brand"><h1>CENTRO DE COMANDO</h1><span class="sub">monitoramento dos agentes</span></div>
+    <div class="top-right"><span id="updated"></span><button class="refresh" id="refresh">Atualizar</button></div>
+  </header>
+
+  <!-- SAÚDE -->
+  <p class="sec">Saúde dos agentes · última atividade</p>
+  <div class="grid g4" id="agents"></div>
+
+  <!-- HOJE -->
+  <p class="sec">Hoje</p>
+  <div class="grid g4">
+    <div class="card"><div class="lbl">Conversas</div><div class="num gold" id="mConv">—</div></div>
+    <div class="card"><div class="lbl">Custo estimado IA</div><div class="num" id="mCost">—</div><div class="foot" id="mTokens"></div></div>
+    <div class="card"><div class="lbl">Moderação (flags)</div><div class="num" id="mFlags">—</div><div class="foot" id="mStrikes"></div></div>
+    <div class="card"><div class="lbl">Erros</div><div class="num" id="mErr">—</div><div class="foot">nas últimas 24h</div></div>
+  </div>
+
+  <!-- 7 DIAS -->
+  <p class="sec">Conversas · últimos dias</p>
+  <div class="chartcard"><div class="bars" id="chart"></div></div>
+
+  <!-- INTELIGÊNCIA -->
+  <p class="sec">Inteligência (PULSE)</p>
+  <div class="grid g3" style="margin-bottom:16px">
+    <div class="card"><div class="lbl">Pedidos faltantes</div><div class="num gold" id="iLost">—</div><div class="foot">demanda não atendida</div></div>
+    <div class="card"><div class="lbl">Produtos no radar</div><div class="num" id="iConcepts">—</div></div>
+    <div class="card"><div class="lbl">Perguntas totais</div><div class="num" id="iMentions">—</div></div>
+  </div>
+  <div class="two">
+    <div class="card"><div class="lbl" style="margin-bottom:12px">🟡 Top sourcing (não temos)</div><ul class="rank" id="rankSource"></ul></div>
+    <div class="card"><div class="lbl" style="margin-bottom:12px">🟢 Top vitrine (temos)</div><ul class="rank" id="rankVitrine"></ul></div>
+  </div>
+  <p class="note" id="costNote"></p>
+</div>
+
+<script>
+// ── Tarifas estimadas da IA (AJUSTE conforme sua fatura real da Anthropic) ──
+// valores por 1 milhão de tokens, em reais (estimativa grosseira p/ Haiku)
+const PRICE_IN  = 5.0;   // R$ por 1M tokens de entrada
+const PRICE_OUT = 25.0;  // R$ por 1M tokens de saída
+const AUX_IN = 400, AUX_OUT = 90; // tokens médios estimados por chamada auxiliar (M.I.S.S / extração)
+
+const M_API = '/.netlify/functions/metrics-data';
+const P_API = '/.netlify/functions/pulse-data';
+let AUTH = '', METRICS = null, PULSE = null;
+const $ = (s) => document.querySelector(s);
+
+$('#enter').onclick = login;
+$('#pw').addEventListener('keydown', e => { if (e.key === 'Enter') login(); });
+async function login(){
+  const pw = $('#pw').value.trim(); $('#gateErr').textContent = '';
+  if (!pw) return;
+  try{
+    const r = await fetch(M_API + '?token=' + encodeURIComponent(pw));
+    if (r.status === 401){ $('#gateErr').textContent = 'senha incorreta'; return; }
+    if (!r.ok) throw new Error();
+    AUTH = pw; METRICS = await r.json();
+    PULSE = await (await fetch(P_API + '?token=' + encodeURIComponent(pw))).json();
+    $('#gate').classList.add('hidden'); $('#app').classList.remove('hidden');
+    render();
+  }catch{ $('#gateErr').textContent = 'Não consegui falar com o servidor. Publicado na Netlify?'; }
+}
+$('#refresh').onclick = async () => {
+  try{
+    METRICS = await (await fetch(M_API + '?token=' + encodeURIComponent(AUTH))).json();
+    PULSE = await (await fetch(P_API + '?token=' + encodeURIComponent(AUTH))).json();
+    render();
+  }catch{}
+};
+
+function render(){
+  const buckets = (METRICS && METRICS.buckets) || [];
+  const hb = (METRICS && METRICS.heartbeat) || {};
+  const today = buckets[buckets.length - 1] || {};
+  const last24err = (today.errors || 0) + ((buckets[buckets.length - 2] || {}).errors || 0);
+
+  // saúde dos agentes
+  renderAgents(hb);
+
+  // hoje
+  $('#mConv').textContent = (today.conversations || 0).toLocaleString('pt-BR');
+  const tin = today.nayra_in || 0, tout = today.nayra_out || 0, aux = today.aux_calls || 0;
+  const cost = (tin/1e6*PRICE_IN) + (tout/1e6*PRICE_OUT)
+             + (aux*AUX_IN/1e6*PRICE_IN) + (aux*AUX_OUT/1e6*PRICE_OUT);
+  $('#mCost').textContent = 'R$ ' + cost.toFixed(2);
+  $('#mTokens').textContent = (tin+tout).toLocaleString('pt-BR') + ' tokens · ' + aux + ' chamadas aux.';
+  $('#mFlags').textContent = (today.miss_flags || 0).toLocaleString('pt-BR');
+  $('#mStrikes').textContent = (today.strikes || 0) + ' strikes · ' + (today.bans || 0) + ' bans';
+  $('#mErr').textContent = (today.errors || 0).toLocaleString('pt-BR');
+
+  // gráfico de conversas
+  renderChart(buckets);
+
+  // inteligência (PULSE)
+  const concepts = (PULSE && PULSE.concepts) || [];
+  const source = concepts.filter(c => c.current_status === 'NOT_IN_CATALOG');
+  const out = concepts.filter(c => c.current_status === 'OUT_OF_STOCK');
+  const vitrine = concepts.filter(c => c.current_status === 'IN_STOCK');
+  const lost = [...source, ...out].reduce((s,c) => s + (c.unique_people||0), 0);
+  $('#iLost').textContent = lost.toLocaleString('pt-BR');
+  $('#iConcepts').textContent = concepts.length.toLocaleString('pt-BR');
+  $('#iMentions').textContent = concepts.reduce((s,c)=>s+(c.total_mentions||0),0).toLocaleString('pt-BR');
+  fillRank('#rankSource', source);
+  fillRank('#rankVitrine', vitrine);
+
+  $('#costNote').textContent = 'Custo de IA é uma ESTIMATIVA (tarifas no topo do código, ajuste conforme sua fatura real). ' +
+    'Saúde mostra a última atividade de cada agente — com pouco tráfego, "ocioso" não significa quebrado.';
+  if (METRICS && Object.keys(hb).length) $('#updated').textContent = 'atualizado agora';
+}
+
+function renderAgents(hb){
+  const defs = [
+    { key:'nayra', nome:'Nayra' },
+    { key:'miss',  nome:'M.I.S.S' },
+    { key:'pulse', nome:'PULSE' },
+    { key:'__sys', nome:'Sistema' }
+  ];
+  const box = $('#agents'); box.innerHTML = '';
+  const now = Date.now();
+  defs.forEach(d => {
+    let dot = 'idle', st = 'sem atividade';
+    if (d.key === '__sys'){
+      // saúde geral: se houve atividade recente e poucos erros
+      const any = Object.values(hb).map(t => now - new Date(t).getTime()).sort((a,b)=>a-b)[0];
+      if (any == null) { dot='idle'; st='aguardando'; }
+      else { dot='ok'; st='operacional'; }
+    } else if (hb[d.key]) {
+      const mins = (now - new Date(hb[d.key]).getTime())/60000;
+      st = fmtAgo(mins);
+      dot = mins < 60 ? 'ok' : (mins < 1440 ? 'warn' : 'idle');
+    }
+    const el = document.createElement('div');
+    el.className = 'agent';
+    el.innerHTML = '<span class="dot '+dot+'"></span><span class="nm">'+d.nome+'</span><span class="st">'+st+'</span>';
+    box.appendChild(el);
+  });
+}
+
+function renderChart(buckets){
+  const last = buckets.slice(-10);
+  const max = Math.max(1, ...last.map(b => b.conversations || 0));
+  const c = $('#chart'); c.innerHTML = '';
+  if (!last.length){ c.innerHTML = '<div class="empty">Sem dados ainda.</div>'; return; }
+  last.forEach(b => {
+    const v = b.conversations || 0;
+    const h = Math.round(v/max*100);
+    const day = (b.date || '').slice(5); // MM-DD
+    const bar = document.createElement('div');
+    bar.className = 'bar'; bar.style.height = h + '%';
+    bar.innerHTML = '<b>'+(v||'')+'</b><span>'+day+'</span>';
+    c.appendChild(bar);
+  });
+}
+
+function fillRank(sel, list){
+  const ul = $(sel); ul.innerHTML = '';
+  list.sort((a,b)=>(b.unique_people||0)-(a.unique_people||0));
+  if (!list.length){ ul.innerHTML = '<li class="empty">Nada ainda.</li>'; return; }
+  list.slice(0,6).forEach((c,i)=>{
+    const li = document.createElement('li');
+    li.innerHTML = '<span class="rk">'+(i+1)+'</span><span class="nm">'+esc(c.name)+'</span><span class="ppl">'+(c.unique_people||0)+'</span>';
+    ul.appendChild(li);
+  });
+}
+
+function fmtAgo(mins){
+  if (mins < 1) return 'agora há pouco';
+  if (mins < 60) return 'há ' + Math.round(mins) + ' min';
+  if (mins < 1440) return 'há ' + Math.round(mins/60) + ' h';
+  return 'há ' + Math.round(mins/1440) + ' d';
+}
+function esc(s){ return String(s||'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
+</script>
+</body>
+</html>
+
