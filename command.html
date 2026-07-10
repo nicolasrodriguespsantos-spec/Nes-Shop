@@ -41,6 +41,15 @@
   .card .num{font-family:'Space Grotesk';font-size:30px;line-height:1;color:var(--ink)}
   .card .num.gold{color:var(--gold-bright)}
   .card .foot{color:var(--muted);font-size:12px;margin-top:7px}
+  .delta{display:inline-flex;align-items:center;gap:5px;font-family:'Space Grotesk';font-size:12px;margin-top:9px}
+  .delta.up{color:var(--ok)} .delta.down{color:var(--bad)} .delta.flat{color:var(--faint)}
+  .delta .abs{color:var(--faint);font-weight:400}
+
+  .mnt-row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:12px}
+  .mnt-row select{background:var(--surface-2);border:1px solid var(--line);color:var(--ink);font-size:13px;padding:8px 12px;border-radius:9px}
+  button.danger{background:var(--surface-2);border:1px solid var(--bad);color:var(--bad);font-size:13px;padding:8px 14px;border-radius:9px;cursor:pointer}
+  button.danger:hover{background:rgba(229,72,77,.12)}
+  .mnt-msg{color:var(--muted);font-size:12.5px;min-height:16px;margin-top:10px}
 
   .agent{display:flex;align-items:center;gap:11px;padding:14px 18px;background:var(--surface);border:1px solid var(--line);border-radius:var(--r)}
   .agent .dot{width:11px;height:11px;border-radius:50%;flex:none}
@@ -103,12 +112,13 @@
   <div class="grid g4" id="agents"></div>
 
   <!-- HOJE -->
-  <p class="sec">Hoje</p>
+  <p class="sec">Hoje <span style="text-transform:none;letter-spacing:0;color:var(--faint)">· comparado com ontem</span></p>
   <div class="grid g4">
-    <div class="card"><div class="lbl">Conversas</div><div class="num gold" id="mConv">—</div></div>
-    <div class="card"><div class="lbl">Custo estimado IA</div><div class="num" id="mCost">—</div><div class="foot" id="mTokens"></div></div>
-    <div class="card"><div class="lbl">Moderação (flags)</div><div class="num" id="mFlags">—</div><div class="foot" id="mStrikes"></div></div>
-    <div class="card"><div class="lbl">Erros</div><div class="num" id="mErr">—</div><div class="foot">nas últimas 24h</div></div>
+    <div class="card"><div class="lbl">Conversas</div><div class="num gold" id="mConv">—</div><div id="dConv"></div></div>
+    <div class="card"><div class="lbl">Intenção de compra</div><div class="num" id="mIntent">—</div><div id="dIntent"></div><div class="foot">pessoas que quiseram comprar</div></div>
+    <div class="card"><div class="lbl">Custo estimado IA</div><div class="num" id="mCost">—</div><div id="dCost"></div><div class="foot" id="mTokens"></div></div>
+    <div class="card"><div class="lbl">Moderação (flags)</div><div class="num" id="mFlags">—</div><div id="dFlags"></div><div class="foot" id="mStrikes"></div></div>
+    <div class="card"><div class="lbl">Erros</div><div class="num" id="mErr">—</div><div id="dErr"></div><div class="foot">no dia de hoje</div></div>
   </div>
 
   <!-- 7 DIAS -->
@@ -127,6 +137,19 @@
     <div class="card"><div class="lbl" style="margin-bottom:12px">🟢 Top vitrine (temos)</div><ul class="rank" id="rankVitrine"></ul></div>
   </div>
   <p class="note" id="costNote"></p>
+
+  <!-- MANUTENÇÃO -->
+  <p class="sec" style="margin-top:30px">Manutenção</p>
+  <div class="card">
+    <div class="lbl">Excluir dados de teste</div>
+    <p class="note" style="margin-top:6px">Limpa métricas geradas pelos seus próprios testes, pra o número real nascer limpo quando as vendas começarem. Não dá pra desfazer.</p>
+    <div class="mnt-row">
+      <select id="delDay"><option value="">selecione um dia…</option></select>
+      <button class="danger" id="btnDelDay">Excluir este dia</button>
+      <button class="danger" id="btnReset">Zerar todas as métricas</button>
+    </div>
+    <div class="mnt-msg" id="mntMsg"></div>
+  </div>
 </div>
 
 <script>
@@ -168,21 +191,32 @@ function render(){
   const buckets = (METRICS && METRICS.buckets) || [];
   const hb = (METRICS && METRICS.heartbeat) || {};
   const today = buckets[buckets.length - 1] || {};
-  const last24err = (today.errors || 0) + ((buckets[buckets.length - 2] || {}).errors || 0);
+  const yest  = buckets[buckets.length - 2] || {};
 
   // saúde dos agentes
   renderAgents(hb);
 
   // hoje
   $('#mConv').textContent = (today.conversations || 0).toLocaleString('pt-BR');
+  $('#mIntent').textContent = (today.purchase_intents || 0).toLocaleString('pt-BR');
   const tin = today.nayra_in || 0, tout = today.nayra_out || 0, aux = today.aux_calls || 0;
-  const cost = (tin/1e6*PRICE_IN) + (tout/1e6*PRICE_OUT)
-             + (aux*AUX_IN/1e6*PRICE_IN) + (aux*AUX_OUT/1e6*PRICE_OUT);
+  const cost = costOf(today);
   $('#mCost').textContent = 'R$ ' + cost.toFixed(2);
   $('#mTokens').textContent = (tin+tout).toLocaleString('pt-BR') + ' tokens · ' + aux + ' chamadas aux.';
   $('#mFlags').textContent = (today.miss_flags || 0).toLocaleString('pt-BR');
   $('#mStrikes').textContent = (today.strikes || 0) + ' strikes · ' + (today.bans || 0) + ' bans';
   $('#mErr').textContent = (today.errors || 0).toLocaleString('pt-BR');
+
+  // comparação com as 24h anteriores (número + %)
+  const hasYest = !!yest.date;
+  setDelta('#dConv',   today.conversations || 0,    yest.conversations || 0,    'up-good', hasYest);
+  setDelta('#dIntent', today.purchase_intents || 0, yest.purchase_intents || 0, 'up-good', hasYest);
+  setDelta('#dCost',   cost,                         costOf(yest),               'neutral', hasYest, true);
+  setDelta('#dFlags',  today.miss_flags || 0,        yest.miss_flags || 0,       'neutral', hasYest);
+  setDelta('#dErr',    today.errors || 0,            yest.errors || 0,           'up-bad',  hasYest);
+
+  // manutenção — lista de dias
+  fillDays(buckets);
 
   // gráfico de conversas
   renderChart(buckets);
@@ -259,6 +293,79 @@ function fillRank(sel, list){
   });
 }
 
+function costOf(b){
+  const tin = b.nayra_in || 0, tout = b.nayra_out || 0, aux = b.aux_calls || 0;
+  return (tin/1e6*PRICE_IN) + (tout/1e6*PRICE_OUT)
+       + (aux*AUX_IN/1e6*PRICE_IN) + (aux*AUX_OUT/1e6*PRICE_OUT);
+}
+
+// selo de comparação: mode 'up-good' (subir é bom), 'up-bad' (subir é ruim), 'neutral'
+function setDelta(sel, now, prev, mode, hasYest, isMoney){
+  const el = $(sel); if (!el) return;
+  if (!hasYest){ el.innerHTML = '<span class="delta flat">— sem base de ontem</span>'; return; }
+  const diff = now - prev;
+  const arrow = diff > 0 ? '▲' : (diff < 0 ? '▼' : '■');
+  let cls = 'flat';
+  if (diff !== 0){
+    const good = mode === 'up-good' ? diff > 0 : (mode === 'up-bad' ? diff < 0 : null);
+    cls = good === null ? 'flat' : (good ? 'up' : 'down');
+  }
+  const pct = prev > 0 ? Math.round(Math.abs(diff)/prev*100) + '%'
+            : (now > 0 ? 'novo' : '—');
+  const absTxt = isMoney
+    ? (diff >= 0 ? '+' : '−') + 'R$ ' + Math.abs(diff).toFixed(2)
+    : (diff >= 0 ? '+' : '−') + Math.abs(diff).toLocaleString('pt-BR');
+  el.innerHTML = '<span class="delta '+cls+'">'+arrow+' '+pct+
+                 ' <span class="abs">('+absTxt+' vs ontem)</span></span>';
+}
+
+function fillDays(buckets){
+  const sel = $('#delDay'); if (!sel) return;
+  const cur = sel.value;
+  sel.innerHTML = '<option value="">selecione um dia…</option>';
+  buckets.slice().reverse().forEach(b => {
+    if (!b.date) return;
+    const o = document.createElement('option');
+    o.value = b.date;
+    o.textContent = b.date + '  ·  ' + (b.conversations || 0) + ' conversas';
+    sel.appendChild(o);
+  });
+  if (cur) sel.value = cur;
+}
+
+async function adminPost(payload){
+  const r = await fetch(M_API, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ token: AUTH, ...payload })
+  });
+  if (!r.ok) throw new Error('falha ' + r.status);
+  return r.json();
+}
+async function reloadMetrics(){
+  METRICS = await (await fetch(M_API + '?token=' + encodeURIComponent(AUTH))).json();
+  render();
+}
+
+$('#btnDelDay').onclick = async () => {
+  const date = $('#delDay').value;
+  const msg = $('#mntMsg');
+  if (!date){ msg.textContent = 'Escolha um dia primeiro.'; return; }
+  if (!confirm('Excluir TODAS as métricas do dia ' + date + '? Isso não pode ser desfeito.')) return;
+  msg.textContent = 'Excluindo…';
+  try{ await adminPost({ action: 'delete', date }); await reloadMetrics(); msg.textContent = 'Dia ' + date + ' excluído.'; }
+  catch{ msg.textContent = 'Não consegui excluir. Tenta de novo.'; }
+};
+
+$('#btnReset').onclick = async () => {
+  const msg = $('#mntMsg');
+  if (!confirm('ZERAR TODAS as métricas de todos os dias? Isso apaga todo o histórico e não pode ser desfeito.')) return;
+  if (!confirm('Tem certeza mesmo? Última chance.')) return;
+  msg.textContent = 'Zerando…';
+  try{ await adminPost({ action: 'reset' }); await reloadMetrics(); msg.textContent = 'Todas as métricas foram zeradas.'; }
+  catch{ msg.textContent = 'Não consegui zerar. Tenta de novo.'; }
+};
+
 function fmtAgo(mins){
   if (mins < 1) return 'agora há pouco';
   if (mins < 60) return 'há ' + Math.round(mins) + ' min';
@@ -269,4 +376,3 @@ function esc(s){ return String(s||'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&
 </script>
 </body>
 </html>
-
