@@ -72,6 +72,8 @@
   ul.rank .rk{font-family:'Space Grotesk';color:var(--faint);width:18px;text-align:center}
   ul.rank .nm{flex:1}
   ul.rank .ppl{font-family:'Space Grotesk';color:var(--gold-bright)}
+  ul.rank .del{background:none;border:0;color:var(--faint);cursor:pointer;font-size:15px;line-height:1;padding:2px 4px;border-radius:6px;margin-left:4px}
+  ul.rank .del:hover{color:var(--bad);background:rgba(229,72,77,.12)}
   .two{display:grid;grid-template-columns:1fr 1fr;gap:16px}
   @media(max-width:820px){.two{grid-template-columns:1fr}}
   .note{color:var(--faint);font-size:11.5px;line-height:1.5;margin-top:10px}
@@ -136,6 +138,10 @@
     <div class="card"><div class="lbl" style="margin-bottom:12px">🟡 Top sourcing (não temos)</div><ul class="rank" id="rankSource"></ul></div>
     <div class="card"><div class="lbl" style="margin-bottom:12px">🟢 Top vitrine (temos)</div><ul class="rank" id="rankVitrine"></ul></div>
   </div>
+  <div class="mnt-row">
+    <button class="danger" id="btnResetPulse">Zerar radar do PULSE</button>
+    <span class="mnt-msg" id="pulseMsg" style="margin-top:0"></span>
+  </div>
   <p class="note" id="costNote"></p>
 
   <!-- MANUTENÇÃO -->
@@ -161,6 +167,7 @@ const AUX_IN = 400, AUX_OUT = 90; // tokens médios estimados por chamada auxili
 
 const M_API = '/.netlify/functions/metrics-data';
 const P_API = '/.netlify/functions/pulse-data';
+const P_ADMIN = '/.netlify/functions/pulse-admin';
 let AUTH = '', METRICS = null, PULSE = null;
 const $ = (s) => document.querySelector(s);
 
@@ -288,7 +295,9 @@ function fillRank(sel, list){
   if (!list.length){ ul.innerHTML = '<li class="empty">Nada ainda.</li>'; return; }
   list.slice(0,6).forEach((c,i)=>{
     const li = document.createElement('li');
-    li.innerHTML = '<span class="rk">'+(i+1)+'</span><span class="nm">'+esc(c.name)+'</span><span class="ppl">'+(c.unique_people||0)+'</span>';
+    li.innerHTML = '<span class="rk">'+(i+1)+'</span><span class="nm">'+esc(c.name)+'</span>'+
+                   '<span class="ppl">'+(c.unique_people||0)+'</span>'+
+                   '<button class="del" data-id="'+esc(c.id)+'" data-name="'+esc(c.name)+'" title="excluir do radar">✕</button>';
     ul.appendChild(li);
   });
 }
@@ -363,6 +372,45 @@ $('#btnReset').onclick = async () => {
   if (!confirm('Tem certeza mesmo? Última chance.')) return;
   msg.textContent = 'Zerando…';
   try{ await adminPost({ action: 'reset' }); await reloadMetrics(); msg.textContent = 'Todas as métricas foram zeradas.'; }
+  catch{ msg.textContent = 'Não consegui zerar. Tenta de novo.'; }
+};
+
+// ── PULSE: manutenção ──
+async function pulsePost(payload){
+  const r = await fetch(P_ADMIN, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ token: AUTH, ...payload })
+  });
+  if (!r.ok) throw new Error('falha ' + r.status);
+  return r.json();
+}
+async function reloadPulse(){
+  PULSE = await (await fetch(P_API + '?token=' + encodeURIComponent(AUTH))).json();
+  render();
+}
+
+// exclusão unitária: clique no ✕ de qualquer item das duas listas
+['#rankSource', '#rankVitrine'].forEach(sel => {
+  const ul = $(sel);
+  if (ul) ul.addEventListener('click', async (e) => {
+    const btn = e.target.closest('.del'); if (!btn) return;
+    const id = btn.getAttribute('data-id');
+    const name = btn.getAttribute('data-name') || 'esse item';
+    const msg = $('#pulseMsg');
+    if (!confirm('Excluir "' + name + '" do radar do PULSE? Não pode ser desfeito.')) return;
+    msg.textContent = 'Excluindo…';
+    try{ await pulsePost({ action: 'delete', id }); await reloadPulse(); msg.textContent = '"' + name + '" excluído do radar.'; }
+    catch{ msg.textContent = 'Não consegui excluir. Tenta de novo.'; }
+  });
+});
+
+$('#btnResetPulse').onclick = async () => {
+  const msg = $('#pulseMsg');
+  if (!confirm('ZERAR o radar inteiro do PULSE? Apaga todos os produtos observados e não pode ser desfeito.')) return;
+  if (!confirm('Tem certeza mesmo? Última chance.')) return;
+  msg.textContent = 'Zerando…';
+  try{ await pulsePost({ action: 'reset' }); await reloadPulse(); msg.textContent = 'Radar do PULSE zerado.'; }
   catch{ msg.textContent = 'Não consegui zerar. Tenta de novo.'; }
 };
 
