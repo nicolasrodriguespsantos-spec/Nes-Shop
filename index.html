@@ -287,82 +287,136 @@
 // ═══════════════════════════════════════════════════════════
 //  CATÁLOGO — cada produto tem especificações detalhadas
 //  para a Nayra responder dúvidas técnicas e recomendar combos
+//
+//  ⚠️ AMBIENTE DE TESTE: os campos "estoque", "avaliacao", "vendas"
+//     e "promo" abaixo são FICTÍCIOS, criados só para exercitar as
+//     ferramentas de venda da Nayra. Quando a loja for real, eles
+//     PRECISAM vir do estoque/promoções de verdade. Dado falso no ar
+//     faz a Nayra anunciar promoção que não existe.
+//
+//  Para que servem os campos novos:
+//    resolve   → a dor real que o produto cura (Alívio da Dor)
+//    estoque   → escassez só pode ser dita se for verdade
+//    promo     → prazo REAL + motivo EXTERNO real (Ancoragem de Prazo)
+//    avaliacao → prova social honesta (sem inventar depoimento)
 // ═══════════════════════════════════════════════════════════
+
+// Prazo dinâmico: a promoção sempre vence na PRÓXIMA SEXTA, pro teste nunca
+// ficar com data vencida. Em produção isso vem do sistema de promoções.
+function proximaSexta() {
+  const d = new Date();
+  const diff = (5 - d.getDay() + 7) % 7 || 7;
+  d.setDate(d.getDate() + diff);
+  return d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
+}
+
 const products = [
   { id:1, name:'Smartphone Ultra X12', category:'Eletrônicos', price:1299.90, oldPrice:1599.90, emoji:'📱', badge:'hot',
     tags:['celular','smartphone','telefone','5g','android'],
     specs:{ 'Tela':'AMOLED 6.7"', 'Câmera':'200MP', 'Bateria':'5000mAh', 'Conexão':'5G', 'Garantia':'12 meses' },
     desc:'Câmera 200MP, 5G, bateria 5000mAh. Tela AMOLED 6.7 polegadas, design premium.',
+    resolve:'celular velho que trava, bateria que não dura o dia, foto ruim em festa/à noite',
+    estoque:14, avaliacao:'4,7 de 5 (289 avaliações)', vendas:'830 vendidos',
+    promo:{ termina_em: proximaSexta(), motivo:'o fornecedor liberou este preço até esta data porque está fechando o trimestre dele' },
     combos:[2,3] },
   { id:2, name:'Fone Bluetooth Pro', category:'Eletrônicos', price:299.90, oldPrice:399.90, emoji:'🎧', badge:'sale',
     tags:['fone','headphone','bluetooth','audio','musica','ouvido'],
     specs:{ 'Tipo':'Over-ear sem fio', 'Autonomia':'30 horas', 'Recurso':'Cancelamento de ruído', 'Conexão':'Bluetooth 5.3', 'Garantia':'12 meses' },
     desc:'Som Hi-Fi com cancelamento de ruído ativo. Autonomia de 30 horas de uso.',
+    resolve:'barulho atrapalhando o foco/estudo, fone que descarrega rápido, som ruim em chamada',
+    estoque:31, avaliacao:'4,6 de 5 (512 avaliações)', vendas:'1.940 vendidos',
     combos:[1,4] },
   { id:3, name:'Smart Watch Series 5', category:'Eletrônicos', price:499.90, oldPrice:null, emoji:'⌚', badge:'new',
     tags:['relogio','smartwatch','watch','monitor','saude','gps'],
     specs:{ 'Tela':'1.4" touch', 'Sensores':'Cardíaco + GPS', 'Resistência':'À prova d\'água 50m', 'Bateria':'7 dias', 'Garantia':'12 meses' },
     desc:'Monitor cardíaco, GPS integrado, resistente à água até 50m.',
+    resolve:'quer acompanhar saúde/treino, esquece de se movimentar, quer usar na natação',
+    estoque:9, avaliacao:'4,5 de 5 (147 avaliações)', vendas:'380 vendidos',
     combos:[1,2] },
   { id:4, name:'Tablet HD 10"', category:'Eletrônicos', price:899.90, oldPrice:1099.90, emoji:'📲', badge:'sale',
     tags:['tablet','ipad','tela','estudo','trabalho'],
     specs:{ 'Tela':'Full HD 10"', 'Processador':'Octa-core', 'Memória':'4GB RAM', 'Armazenamento':'64GB', 'Garantia':'12 meses' },
     desc:'Processador octa-core, 4GB RAM, tela Full HD com 10 polegadas.',
+    resolve:'tela do celular pequena pra estudar/trabalhar, não quer carregar notebook pesado',
+    estoque:6, avaliacao:'4,4 de 5 (98 avaliações)', vendas:'240 vendidos',
     combos:[2,3] },
   { id:5, name:'Luminária LED Inteligente', category:'Casa', price:149.90, oldPrice:null, emoji:'💡', badge:'new',
     tags:['luminaria','luz','led','alexa','smart','home','iluminacao'],
     specs:{ 'Cores':'16 milhões', 'Controle':'Voz e app', 'Compatível':'Alexa e Google', 'Potência':'9W', 'Garantia':'6 meses' },
     desc:'Controle por voz e app. 16 milhões de cores, compatível com Alexa.',
+    resolve:'luz fria/dura demais em casa, quer ambiente aconchegante, levantar pra apagar a luz',
+    estoque:42, avaliacao:'4,5 de 5 (163 avaliações)', vendas:'610 vendidos',
     combos:[7,8] },
   { id:6, name:'Jogo de Panelas Premium', category:'Casa', price:389.90, oldPrice:480.00, emoji:'🍳', badge:'sale',
     tags:['panela','cozinha','inox','conjunto','culinaria'],
     specs:{ 'Peças':'5 unidades', 'Material':'Aço inox', 'Tampa':'Vidro temperado', 'Compatível':'Indução e gás', 'Garantia':'12 meses' },
     desc:'Conjunto 5 peças em aço inox. Tampa de vidro temperado, alças ergonômicas.',
+    resolve:'comida grudando/queimando no fundo, panela velha descascando, cabo que esquenta',
+    estoque:5, avaliacao:'4,8 de 5 (204 avaliações)', vendas:'720 vendidos',
+    promo:{ termina_em: proximaSexta(), motivo:'a remessa promocional do fornecedor termina nesta data' },
     combos:[] },
   { id:7, name:'Almofada Decorativa', category:'Casa', price:79.90, oldPrice:null, emoji:'🛋️', badge:'new',
     tags:['almofada','decoracao','sofa','quarto','sala'],
     specs:{ 'Tamanho':'45x45cm', 'Material':'Veludo premium', 'Enchimento':'Fibra siliconada', 'Lavável':'Sim', 'Garantia':'3 meses' },
     desc:'Veludo premium 45x45cm. Lavável, enchimento de fibra siliconada.',
+    resolve:'sofá sem graça, quer aconchego sem reformar, almofada que murcha',
+    estoque:67, avaliacao:'4,3 de 5 (89 avaliações)', vendas:'350 vendidos',
     combos:[8,5] },
   { id:8, name:'Espelho de Parede', category:'Casa', price:199.90, oldPrice:249.90, emoji:'🪞', badge:'sale',
     tags:['espelho','parede','decoracao','quarto','moldura'],
     specs:{ 'Tamanho':'60x80cm', 'Moldura':'Dourada artesanal', 'Instalação':'Suporte incluso', 'Peso':'2.5kg', 'Garantia':'6 meses' },
     desc:'Moldura dourada artesanal. 60x80cm, suporte incluso.',
+    resolve:'ambiente pequeno/escuro, falta espelho de corpo, quer sofisticar sem gastar muito',
+    estoque:11, avaliacao:'4,6 de 5 (112 avaliações)', vendas:'290 vendidos',
     combos:[7,5] },
   { id:9, name:'Vestido Floral Summer', category:'Moda', price:189.90, oldPrice:239.90, emoji:'👗', badge:'hot',
     tags:['vestido','roupa','feminino','floral','verao','moda'],
     specs:{ 'Tecido':'100% viscose', 'Tamanhos':'P, M, G, GG', 'Estilo':'Floral verão', 'Cores':'Variadas', 'Garantia':'Troca 7 dias' },
     desc:'Tecido leve 100% viscose. Disponível em P, M, G e GG.',
+    resolve:'calor insuportável, nada pra vestir em ocasião casual, roupa que marca/abafa',
+    estoque:23, avaliacao:'4,4 de 5 (176 avaliações)', vendas:'520 vendidos',
     combos:[11,12] },
   { id:10, name:'Tênis Urban Style', category:'Moda', price:279.90, oldPrice:null, emoji:'👟', badge:'new',
     tags:['tenis','sapato','calçado','masculino','feminino','esporte'],
     specs:{ 'Solado':'Borracha antiderrapante', 'Numeração':'34 ao 44', 'Estilo':'Casual urbano', 'Material':'Sintético respirável', 'Garantia':'Troca 7 dias' },
     desc:'Solado de borracha antiderrapante. Numeração 34 ao 44.',
+    resolve:'pé cansado/dolorido no fim do dia, tênis escorregando, pé suando',
+    estoque:18, avaliacao:'4,5 de 5 (231 avaliações)', vendas:'640 vendidos',
     combos:[11] },
   { id:11, name:'Bolsa Couro Sintético', category:'Moda', price:229.90, oldPrice:299.90, emoji:'👜', badge:'sale',
     tags:['bolsa','bag','feminino','couro','acessorio'],
     specs:{ 'Material':'Couro sintético', 'Compartimentos':'Internos com divisórias', 'Alça':'Ajustável 120cm', 'Fecho':'Zíper', 'Garantia':'Troca 7 dias' },
     desc:'Compartimento interno com divisórias. Alça ajustável 120cm.',
+    resolve:'bolsa bagunçada, não cabe o essencial, alça machucando o ombro',
+    estoque:8, avaliacao:'4,7 de 5 (143 avaliações)', vendas:'410 vendidos',
     combos:[9,12] },
   { id:12, name:'Óculos de Sol Vintage', category:'Moda', price:159.90, oldPrice:null, emoji:'🕶️', badge:'new',
     tags:['oculos','sol','uv','acessorio','moda','vintage'],
     specs:{ 'Proteção':'UV400', 'Armação':'Acetato', 'Lentes':'Policarbonato', 'Estilo':'Vintage', 'Garantia':'Troca 7 dias' },
     desc:'Proteção UV400. Armação acetato, lentes policarbonato.',
+    resolve:'olho ardendo no sol, dor de cabeça com claridade, óculos frágil que quebra',
+    estoque:35, avaliacao:'4,2 de 5 (67 avaliações)', vendas:'190 vendidos',
     combos:[9,11] },
   { id:13, name:'LEGO City Deluxe', category:'Brinquedos', price:349.90, oldPrice:429.90, emoji:'🧩', badge:'hot',
     tags:['lego','montar','crianca','educativo','blocos','brinquedo'],
     specs:{ 'Peças':'600', 'Idade':'6+ anos', 'Benefício':'Criatividade e lógica', 'Tema':'Cidade', 'Garantia':'3 meses' },
     desc:'600 peças. Recomendado 6+. Estimula criatividade e raciocínio lógico.',
+    resolve:'criança grudada na tela, presente que enjoa em dois dias, quer algo que ensine brincando',
+    estoque:7, avaliacao:'4,9 de 5 (198 avaliações)', vendas:'560 vendidos',
     combos:[14,15] },
   { id:14, name:'Boneca Interativa Luna', category:'Brinquedos', price:199.90, oldPrice:null, emoji:'🧸', badge:'new',
     tags:['boneca','brinquedo','menina','interativa','crianca','bebe'],
     specs:{ 'Recursos':'Fala, canta e dança', 'Frases':'50 frases', 'Idade':'3+ anos', 'Pilhas':'Inclusas', 'Garantia':'3 meses' },
     desc:'Fala, canta e dança. 50 frases. Recomendada 3+ anos.',
+    resolve:'presente pra criança pequena, medo de peça pequena/engasgo, brinquedo mudo que não engaja',
+    estoque:16, avaliacao:'4,6 de 5 (154 avaliações)', vendas:'470 vendidos',
     combos:[13,15] },
   { id:15, name:'Carrinho Controle Remoto', category:'Brinquedos', price:149.90, oldPrice:189.90, emoji:'🚗', badge:'sale',
     tags:['carrinho','carro','controle','remoto','menino','brinquedo'],
     specs:{ 'Velocidade':'Até 20km/h', 'Bateria':'Recarregável', 'Alcance':'50 metros', 'Idade':'5+ anos', 'Garantia':'3 meses' },
     desc:'Velocidade até 20km/h. Bateria recarregável, alcance 50m.',
+    resolve:'criança entediada em casa, brinquedo a pilha que vive sem bateria, quer gastar energia',
+    estoque:3, avaliacao:'4,4 de 5 (121 avaliações)', vendas:'330 vendidos',
     combos:[13,14] },
 ];
 
@@ -863,13 +917,32 @@ function hideTyping() { const t = document.getElementById('typingMsg'); if (t) t
 // Histórico da conversa para enviar ao Claude (memória real)
 let conversationHistory = [];
 
-// Monta o catálogo em texto para o Claude conhecer os produtos
+// ═══════════════════════════════════════════════════════════
+//  Este é o texto que a NAYRA lê. Só o que estiver escrito aqui
+//  é que ela pode afirmar. O que NÃO estiver, ela não inventa —
+//  é essa a trava contra promoção falsa e escassez inventada.
+// ═══════════════════════════════════════════════════════════
 function buildCatalogText() {
   return products.map(p => {
-    const specs = Object.entries(p.specs).map(([k,v]) => `${k}: ${v}`).join(', ');
-    const promo = p.oldPrice ? ` (em promoção, de R$${p.oldPrice.toFixed(2)} por R$${p.price.toFixed(2)})` : ` (R$${p.price.toFixed(2)})`;
-    return `- [id ${p.id}] ${p.name} [${p.category}]${promo}. ${p.desc} Especificações: ${specs}.`;
-  }).join('\n');
+    const linhas = [];
+    linhas.push(`[id ${p.id}] ${p.name} — ${p.category}`);
+
+    if (p.oldPrice) linhas.push(`Preço: R$ ${p.price.toFixed(2)} (de R$ ${p.oldPrice.toFixed(2)})`);
+    else            linhas.push(`Preço: R$ ${p.price.toFixed(2)}`);
+
+    // Só existe prazo se estiver escrito aqui. Sem isto, a Ancoragem de Prazo fica desligada.
+    if (p.promo && p.promo.termina_em) {
+      linhas.push(`PROMOÇÃO REAL: este preço vale até ${p.promo.termina_em}. Motivo: ${p.promo.motivo}.`);
+    }
+
+    if (typeof p.estoque === 'number') linhas.push(`Estoque real: ${p.estoque} unidades`);
+    linhas.push(`Descrição: ${p.desc}`);
+    linhas.push(`Especificações: ${Object.entries(p.specs).map(([k,v]) => `${k}: ${v}`).join(', ')}.`);
+    if (p.resolve)   linhas.push(`Resolve (dores reais): ${p.resolve}`);
+    if (p.avaliacao) linhas.push(`Avaliação real: ${p.avaliacao} | ${p.vendas}`);
+
+    return linhas.join('\n');
+  }).join('\n\n');
 }
 
 // Detecta se a resposta do Claude menciona algum produto, para exibir o card
