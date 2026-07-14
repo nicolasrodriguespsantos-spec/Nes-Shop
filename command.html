@@ -145,6 +145,21 @@
   <p class="note" id="costNote"></p>
 
   <!-- MANUTENÇÃO -->
+  <!-- FUNIL / ABANDONOS -->
+  <p class="sec" style="margin-top:30px">Funil de venda</p>
+  <div class="grid g4">
+    <div class="card"><div class="lbl">Quiseram comprar</div><div class="num gold" id="fQuentes">—</div><div class="foot">intenção detectada</div></div>
+    <div class="card"><div class="lbl">Fecharam</div><div class="num" id="fConv">—</div><div class="foot">chegaram ao checkout</div></div>
+    <div class="card"><div class="lbl">Taxa de fechamento</div><div class="num" id="fTaxa">—</div><div class="foot">dos que quiseram, quantos levaram</div></div>
+    <div class="card"><div class="lbl">Abandonos quentes</div><div class="num" id="fAband">—</div><div class="foot">quis comprar e sumiu</div></div>
+  </div>
+
+  <div class="card" style="margin-bottom:30px">
+    <div class="lbl" style="margin-bottom:6px">🔥 Quem quis comprar e sumiu</div>
+    <p class="note" style="margin-top:0">Sessões com intenção de compra que pararam há mais de 30 min sem fechar. É o dinheiro que passou pela porta e voltou — o lugar mais barato de melhorar a loja.</p>
+    <ul class="rank" id="abandonList" style="margin-top:8px"></ul>
+  </div>
+
   <p class="sec" style="margin-top:30px">Manutenção</p>
   <div class="card">
     <div class="lbl">Excluir dados de teste</div>
@@ -168,6 +183,8 @@ const AUX_IN = 400, AUX_OUT = 90; // tokens médios estimados por chamada auxili
 const M_API = '/.netlify/functions/metrics-data';
 const P_API = '/.netlify/functions/pulse-data';
 const P_ADMIN = '/.netlify/functions/pulse-admin';
+const S_API = '/.netlify/functions/session-data';
+let SESS = null;
 let AUTH = '', METRICS = null, PULSE = null;
 const $ = (s) => document.querySelector(s);
 
@@ -182,6 +199,7 @@ async function login(){
     if (!r.ok) throw new Error();
     AUTH = pw; METRICS = await r.json();
     PULSE = await (await fetch(P_API + '?token=' + encodeURIComponent(pw))).json();
+    SESS = await (await fetch(S_API + '?token=' + encodeURIComponent(pw))).json().catch(()=>null);
     $('#gate').classList.add('hidden'); $('#app').classList.remove('hidden');
     render();
   }catch{ $('#gateErr').textContent = 'Não consegui falar com o servidor. Publicado na Netlify?'; }
@@ -190,6 +208,7 @@ $('#refresh').onclick = async () => {
   try{
     METRICS = await (await fetch(M_API + '?token=' + encodeURIComponent(AUTH))).json();
     PULSE = await (await fetch(P_API + '?token=' + encodeURIComponent(AUTH))).json();
+    SESS = await (await fetch(S_API + '?token=' + encodeURIComponent(AUTH))).json().catch(()=>null);
     render();
   }catch{}
 };
@@ -221,6 +240,9 @@ function render(){
   setDelta('#dCost',   cost,                         costOf(yest),               'neutral', hasYest, true);
   setDelta('#dFlags',  today.miss_flags || 0,        yest.miss_flags || 0,       'neutral', hasYest);
   setDelta('#dErr',    today.errors || 0,            yest.errors || 0,           'up-bad',  hasYest);
+
+  // funil de venda / abandonos
+  renderFunil();
 
   // manutenção — lista de dias
   fillDays(buckets);
@@ -298,6 +320,28 @@ function fillRank(sel, list){
     li.innerHTML = '<span class="rk">'+(i+1)+'</span><span class="nm">'+esc(c.name)+'</span>'+
                    '<span class="ppl">'+(c.unique_people||0)+'</span>'+
                    '<button class="del" data-id="'+esc(c.id)+'" data-name="'+esc(c.name)+'" title="excluir do radar">✕</button>';
+    ul.appendChild(li);
+  });
+}
+
+function renderFunil(){
+  const r = (SESS && SESS.resumo) || {};
+  const ab = (SESS && SESS.abandonos) || [];
+
+  $('#fQuentes').textContent = (r.com_intencao != null ? r.com_intencao : 0).toLocaleString('pt-BR');
+  $('#fConv').textContent    = (r.convertidas  != null ? r.convertidas  : 0).toLocaleString('pt-BR');
+  $('#fTaxa').textContent    = (r.taxa_fechamento != null ? r.taxa_fechamento + '%' : '—');
+  $('#fAband').textContent   = ab.length.toLocaleString('pt-BR');
+
+  const ul = $('#abandonList'); if (!ul) return;
+  ul.innerHTML = '';
+  if (!ab.length){ ul.innerHTML = '<li class="empty">Nenhum abandono quente. 🎉</li>'; return; }
+  ab.slice(0,8).forEach((s,i) => {
+    const prod = s.ultimo_produto || '(não identificado)';
+    const li = document.createElement('li');
+    li.innerHTML = '<span class="rk">'+(i+1)+'</span>' +
+      '<span class="nm">'+esc(prod)+'<br><span style="color:var(--faint);font-size:11.5px">'+
+        s.mensagens+' mensagens · sumiu há '+fmtAgo(s.minutos_parado)+'</span></span>';
     ul.appendChild(li);
   });
 }
