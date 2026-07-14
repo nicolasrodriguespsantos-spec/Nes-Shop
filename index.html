@@ -1014,6 +1014,16 @@ function checkout() {
   if (!cart.length) { showToast('Seu carrinho está vazio 🛒'); return; }
   const total = cart.reduce((s, x) => s + x.price * x.qty, 0);
   const itensTxt = cart.map(x => `${x.qty}x ${x.name}`).join(', ');
+
+  // Avisa o servidor que ESTA sessão converteu — é o que fecha o funil na
+  // Central de Comando (sem isso, a taxa de fechamento fica sempre em zero).
+  // À prova de falha: se der erro, a compra segue normalmente.
+  fetch('/.netlify/functions/session-data', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ action: 'checkout', valor: total })
+  }).catch(() => {});
+
   closeCart();
   openNayra();
   setTimeout(() => addNayraMessage(
