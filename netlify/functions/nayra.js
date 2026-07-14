@@ -220,6 +220,52 @@ async function registrarNoPulse(baseUrl, payload) {
   }
 }
 
+// ═══════════════════════════════════════════════════════════
+//  RESUMO DA SESSÃO (sem texto de conversa)
+//  Grava só o esqueleto: produto de interesse, se a intenção esquentou,
+//  quantas trocas, quando parou. NUNCA o que o cliente escreveu.
+//  Serve pro painel responder: "quem quis comprar e sumiu?"
+// ═══════════════════════════════════════════════════════════
+async function atualizarSessao(store, sessionId, dados) {
+  if (!sessionId) return;
+  try {
+    const key = 'session:' + sessionId;
+    const agora = new Date().toISOString();
+    const s = (await store.get(key, { type: 'json' })) || {
+      id: sessionId,
+      inicio: agora,
+      mensagens: 0,
+      intencao_quente: false,
+      converteu: false,
+      produtos: [],        // nomes canônicos que interessaram (do PULSE)
+      ultimo_produto: null,
+      flags_miss: 0,
+    };
+
+    s.mensagens += 1;
+    s.last_seen = agora;
+    if (dados.intencaoQuente) s.intencao_quente = true;
+    if (dados.flagMiss) s.flags_miss += 1;
+    if (dados.produto) {
+      s.ultimo_produto = dados.produto;
+      if (!s.produtos.includes(dados.produto)) s.produtos.push(dados.produto);
+      s.produtos = s.produtos.slice(-6);
+    }
+
+    await store.setJSON(key, s);
+
+    // índice (mantém as 300 sessões mais recentes)
+    const idx = (await store.get('session:index', { type: 'json' })) || { ids: [] };
+    if (!idx.ids.includes(sessionId)) {
+      idx.ids.push(sessionId);
+      idx.ids = idx.ids.slice(-300);
+      await store.setJSON('session:index', idx);
+    }
+  } catch (e) {
+    console.error('sessão (ignorado):', e);
+  }
+}
+
 // Envia telemetria (saúde + números) pro metrics-ingest. À prova de falha, com timeout.
 async function enviarMetricas(baseUrl, counters, agents) {
   if (!baseUrl) return;
@@ -543,6 +589,16 @@ Responda sempre como a Nayra, de forma natural e humana.`;
         const agentes = ['nayra', 'miss'];
         if (pulseRegistered) agentes.push('pulse');
         tarefas.push(enviarMetricas(baseUrl, counters, agentes));
+
+        // resumo da sessão (esqueleto, sem texto) — pro painel ver quem quis comprar e sumiu
+        const { getStore } = await import('@netlify/blobs');
+        const store = getStore({ name: 'pulse', consistency: 'strong' });
+        tarefas.push(atualizarSessao(store, clientId, {
+          intencaoQuente: intencaoDeCompra,
+          produto: demanda ? demanda.produto : null,
+          flagMiss: false
+        }));
+
         await Promise.allSettled(tarefas);
       } catch (e) { console.error('PULSE/métricas bloco (ignorado):', e); }
     }
