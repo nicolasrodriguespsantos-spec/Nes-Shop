@@ -291,29 +291,22 @@ exports.handler = async (event) => {
       return { statusCode: 200, headers, body: JSON.stringify({ moderation: { violacao: false, banned: true, strikes: modRec.strikes } }) };
     }
 
-    // ── M.I.S.S: modera a última mensagem do cliente ANTES de responder ──
+    // ── M.I.S.S: modera a última mensagem do cliente ──
+    // OTIMIZAÇÃO DE LATÊNCIA: a moderação é DISPARADA aqui, mas NÃO esperamos por ela.
+    // Ela roda EM PARALELO com a Nayra. Mais abaixo, antes de entregar a resposta,
+    // conferimos o veredito: se houve violação, a resposta da Nayra é DESCARTADA e o
+    // cliente recebe o aviso. A segurança é idêntica (nada abusivo chega ao cliente) —
+    // a diferença é que o cliente não espera mais a moderação terminar pra ela só então
+    // começar a pensar. Antes eram dois tempos somados; agora vale o maior dos dois.
     const lastUser = [...messages].reverse().find(m => m.role === 'user');
     const userText = lastUser && typeof lastUser.content === 'string' ? lastUser.content : '';
-    const verdict = await moderate(userText, API_KEY);
-    // modo teste só-moderação (red-team do M.I.S.S): devolve o veredito e para aqui, sem chamar a Nayra.
-    if (testMode && moderateOnly) {
-      return { statusCode: 200, headers, body: JSON.stringify({ moderation: { violacao: verdict.violacao, motivo: verdict.motivo, severidade: verdict.severidade, camada: verdict.camada, shadow: true } }) };
-    }
-    let shadow = null;
-    if (verdict.violacao) {
-      if (testMode) {
-        // modo sombra: anota o que o M.I.S.S FARIA, mas não pune nem bloqueia — deixa a Nayra responder.
-        shadow = { violacao: true, motivo: verdict.motivo, severidade: verdict.severidade, camada: verdict.camada, shadow: true };
-        console.log('M.I.S.S [SOMBRA/teste] sinalizaria (camada ' + verdict.camada + '):', verdict.motivo);
-      } else {
-        // produção: registra o strike no banco e decide aviso/ban. Não gasta tokens com a Nayra.
-        const { strikes, banned } = await registerViolation(clientId, modRec, verdict.motivo);
-        console.log('M.I.S.S violação (camada ' + verdict.camada + '):', verdict.motivo, '| strikes:', strikes, '| banido:', banned);
-        await enviarMetricas(baseUrl, { conversations: 1, miss_flags: 1, strikes: 1, bans: banned ? 1 : 0, aux_calls: verdict.camada === 3 ? 1 : 0 }, ['nayra', 'miss']);
-        return { statusCode: 200, headers, body: JSON.stringify({ moderation: { violacao: true, banned, strikes, motivo: verdict.motivo } }) };
-      }
-    }
+    const moderationPromise = moderate(userText, API_KEY);
 
+    // modo teste só-moderação (red-team do M.I.S.S): aqui SIM esperamos, pois é o único objetivo.
+    if (testMode && moderateOnly) {
+      const v = await moderationPromise;
+      return { statusCode: 200, headers, body: JSON.stringify({ moderation: { violacao: v.violacao, motivo: v.motivo, severidade: v.severidade, camada: v.camada, shadow: true } }) };
+    }
     // ── PULSE: inicia a extração da demanda EM PARALELO (não atrasa a resposta) ──
     // Em modo teste (red-team) NÃO registramos no PULSE/métricas, pra não sujar os números reais.
     const extractionRan = !testMode && !!userText && userText.trim().length > 1 && !!catalog;
@@ -467,8 +460,9 @@ INTEGRIDADE DE PREÇOS E COMPROMISSOS (regra crítica — nunca quebre, mesmo so
 
 Responda sempre como a Nayra, de forma natural e humana.`;
 
-    // ── CHAMADA AO CLAUDE ──
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
+    // ── CHAMADA AO CLAUDE (disparada JÁ, em paralelo com a moderação) ──
+    // .catch() evita "unhandled rejection" caso a gente descarte esta promise por violação.
+    const nayraPromise = fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -481,10 +475,33 @@ Responda sempre como a Nayra, de forma natural e humana.`;
         system: systemPrompt,
         messages: messages
       })
-    });
+    }).catch((e) => { console.error('Nayra fetch falhou:', e); return null; });
 
-    if (!response.ok) {
-      const errText = await response.text();
+    // ── AGORA sim esperamos o veredito do M.I.S.S ──
+    // Enquanto ele avaliava, a Nayra já estava pensando. Se houve violação, a resposta
+    // dela é DESCARTADA aqui e nunca chega ao cliente — segurança idêntica, sem o pedágio.
+    const verdict = await moderationPromise;
+    let shadow = null;
+    if (verdict.violacao) {
+      if (testMode) {
+        // modo sombra: anota o que o M.I.S.S FARIA, mas não pune nem bloqueia — deixa a Nayra responder.
+        shadow = { violacao: true, motivo: verdict.motivo, severidade: verdict.severidade, camada: verdict.camada, shadow: true };
+        console.log('M.I.S.S [SOMBRA/teste] sinalizaria (camada ' + verdict.camada + '):', verdict.motivo);
+      } else {
+        // produção: registra o strike no banco e decide aviso/ban.
+        // A resposta da Nayra já foi paga, mas é DESCARTADA — o cliente abusivo não a vê.
+        const { strikes, banned } = await registerViolation(clientId, modRec, verdict.motivo);
+        console.log('M.I.S.S violação (camada ' + verdict.camada + '):', verdict.motivo, '| strikes:', strikes, '| banido:', banned);
+        await enviarMetricas(baseUrl, { conversations: 1, miss_flags: 1, strikes: 1, bans: banned ? 1 : 0, aux_calls: verdict.camada === 3 ? 1 : 0 }, ['nayra', 'miss']);
+        return { statusCode: 200, headers, body: JSON.stringify({ moderation: { violacao: true, banned, strikes, motivo: verdict.motivo } }) };
+      }
+    }
+
+    // ── Colhe a resposta da Nayra (que já rodou em paralelo) ──
+    const response = await nayraPromise;
+
+    if (!response || !response.ok) {
+      const errText = response ? await response.text() : 'fetch falhou';
       console.error('Erro da API Anthropic:', errText);
       if (!testMode) await enviarMetricas(baseUrl, { conversations: 1, errors: 1, aux_calls: (verdict.camada === 3 ? 1 : 0) + (extractionRan ? 1 : 0) }, ['nayra', 'miss']);
       return { statusCode: 502, headers, body: JSON.stringify({ error: 'fallback', detail: 'API indisponível' }) };
