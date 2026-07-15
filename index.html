@@ -862,6 +862,15 @@ function showNayraTeaser() {
 function hideNayraTeaser() { const el = document.getElementById('nayraTeaser'); if (el) el.classList.remove('show'); }
 function dismissTeaser() { teaserDismissed = true; hideNayraTeaser(); }
 
+// Saudação pelo período do dia (horário do próprio visitante).
+// A 1ª mensagem da Nayra é local (não passa pelo servidor), então calculamos aqui.
+function saudacaoDoDia() {
+  const h = new Date().getHours();
+  if (h < 12) return 'Bom dia';
+  if (h < 18) return 'Boa tarde';
+  return 'Boa noite';
+}
+
 function openNayra(opts) {
   opts = opts || {};
   document.getElementById('nayraOverlay').classList.add('open');
@@ -871,12 +880,12 @@ function openNayra(opts) {
     if (opts.proactive) {
       const promo = bestPromo();
       const msg = promo
-        ? `Oi! Sou a <strong>Nayra</strong> 😊 Vi que você está dando uma olhada por aqui e queria te mostrar uma oferta especial: o <strong>${promo.p.name}</strong> está com <strong>${promo.off}% OFF</strong> hoje. Quer que eu te conte mais sobre ele?`
-        : `Oi! Sou a <strong>Nayra</strong> 😊 Posso te ajudar a encontrar o produto perfeito. O que você procura hoje?`;
+        ? `${saudacaoDoDia()}! Sou a <strong>Nayra</strong> 😊 Vi que você está dando uma olhada por aqui e queria te mostrar uma oferta especial: o <strong>${promo.p.name}</strong> está com <strong>${promo.off}% OFF</strong> hoje. Quer que eu te conte mais sobre ele?`
+        : `${saudacaoDoDia()}! Sou a <strong>Nayra</strong> 😊 Posso te ajudar a encontrar o produto perfeito. O que você procura hoje?`;
       Nayra.remember(promo ? [promo.p] : [], 'recommend');
       setTimeout(() => addNayraMessage(msg, promo ? [promo.p] : []), 350);
     } else {
-      setTimeout(() => addNayraMessage('Olá! Sou a <strong>Nayra</strong>, sua assistente aqui na N.E.S Shop. 😊 Será um prazer te ajudar a encontrar o produto perfeito. O que você procura hoje?', []), 400);
+      setTimeout(() => addNayraMessage(saudacaoDoDia() + '! Sou a <strong>Nayra</strong>, sua assistente aqui na N.E.S Shop. 😊 Será um prazer te ajudar a encontrar o produto perfeito. O que você procura hoje?', []), 400);
     }
   }
   if (missIsBanned()) missBanUI(); // sessão já banida → entra com input travado
