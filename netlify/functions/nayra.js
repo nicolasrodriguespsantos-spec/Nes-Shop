@@ -360,8 +360,21 @@ exports.handler = async (event) => {
       ? extrairDemanda(messages, catalog, API_KEY).catch(() => null)
       : Promise.resolve(null);
 
+    // ── Período do dia (fuso de São Paulo) para a saudação da Nayra ──
+    // Reaproveita a mesma ideia do PULSE (que já usa horário de SP).
+    const horaSP = parseInt(new Date().toLocaleString('en-US', {
+      timeZone: 'America/Sao_Paulo', hour: '2-digit', hour12: false
+    }), 10);
+    const periodoDia = horaSP < 12 ? 'manhã' : (horaSP < 18 ? 'tarde' : 'noite');
+    const saudacaoHora = horaSP < 12 ? 'Bom dia' : (horaSP < 18 ? 'Boa tarde' : 'Boa noite');
+
     // ── PERSONALIDADE E REGRAS DA NAYRA ──
     const systemPrompt = `Você é a Nayra, assistente de vendas virtual da N.E.S Shop, uma loja online brasileira.
+
+CONTEXTO DO MOMENTO:
+- Agora é período da ${periodoDia} (horário de Brasília). A saudação correta para agora é "${saudacaoHora}".
+- Use a saudação certa do período AO CUMPRIMENTAR pela primeira vez na conversa (ex.: "${saudacaoHora}! Como posso te ajudar?"). É um toque de cuidado que o cliente percebe.
+- NÃO repita "${saudacaoHora}" a cada mensagem — cumprimenta-se uma vez, no começo. Depois disso, conversa normalmente. Ficar repetindo a saudação soa robótico.
 
 SUA PERSONALIDADE:
 - Simpática e elegante: calorosa, acolhedora, mas mantendo profissionalismo.
@@ -620,3 +633,4 @@ Responda sempre como a Nayra, de forma natural e humana.`;
     return { statusCode: 500, headers, body: JSON.stringify({ error: 'fallback', detail: String(err) }) };
   }
 };
+
