@@ -542,6 +542,24 @@ Responda sempre como a Nayra, de forma natural e humana.`;
       const errText = response ? await response.text() : 'fetch falhou';
       console.error('Erro da API Anthropic:', errText);
       if (!testMode) await enviarMetricas(baseUrl, { conversations: 1, errors: 1, aux_calls: (verdict.camada === 3 ? 1 : 0) + (extractionRan ? 1 : 0) }, ['nayra', 'miss']);
+
+      // Distingue POR QUE falhou:
+      // - saldo esgotado / limite de uso → modo "manutenção" (mensagem honrosa)
+      // - qualquer outro erro (rede, instabilidade) → fallback local normal
+      const status = response ? response.status : 0;
+      const low = (errText || '').toLowerCase();
+      const semSaldo =
+        status === 429 ||                                   // limite de requisições/uso
+        low.includes('credit') || low.includes('crédito') ||// créditos acabaram
+        low.includes('billing') || low.includes('quota') ||
+        low.includes('insufficient') ||
+        (status === 400 && low.includes('balance'));
+
+      if (semSaldo) {
+        console.warn('Nayra em modo MANUTENÇÃO (saldo/limite da API).');
+        return { statusCode: 200, headers, body: JSON.stringify({ maintenance: true }) };
+      }
+
       return { statusCode: 502, headers, body: JSON.stringify({ error: 'fallback', detail: 'API indisponível' }) };
     }
 
