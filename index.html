@@ -1110,6 +1110,19 @@ async function sendMessage() {
 
     const data = await response.json();
 
+    // MODO MANUTENÇÃO: o saldo/limite da API acabou. Em vez de cair na Nayra
+    // local (que fica "burra"), mostramos uma mensagem honrosa — e deixamos a
+    // porta aberta pra pessoa navegar e comprar pela loja normalmente.
+    if (data.maintenance) {
+      hideTyping();
+      addNayraMessage('Oi! 😊 Estou passando por uma rápida manutenção nesse momento e já já volto a conversar. Enquanto isso, fica à vontade pra dar uma olhada nos produtos aqui na loja — e qualquer coisa, é só me chamar mais tarde! 💛', []);
+      // não empurra pro fallback nem polui o histórico
+      if (conversationHistory.length && conversationHistory[conversationHistory.length-1].role === 'user') {
+        conversationHistory.pop();
+      }
+      return;
+    }
+
     // M.I.S.S: aviso (violação) ou já banido → trata e para aqui
     if (data.moderation && (data.moderation.violacao || data.moderation.banned)) {
       hideTyping();
