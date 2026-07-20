@@ -1019,29 +1019,97 @@ function parseNayraActions(reply) {
 }
 
 // Finaliza a compra (no site teste: confirma o pedido; o pagamento real entra na fase Shopify/Stripe)
-function checkout() {
+async function checkout() {
   if (!cart.length) { showToast('Seu carrinho está vazio 🛒'); return; }
-  const total = cart.reduce((s, x) => s + x.price * x.qty, 0);
-  const itensTxt = cart.map(x => `${x.qty}x ${x.name}`).join(', ');
 
-  // Avisa o servidor que ESTA sessão converteu — é o que fecha o funil na
-  // Central de Comando (sem isso, a taxa de fechamento fica sempre em zero).
-  // À prova de falha: se der erro, a compra segue normalmente.
-  fetch('/.netlify/functions/session-data', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ action: 'checkout', valor: total })
-  }).catch(() => {});
+  const btn = document.querySelector('.cart-footer .btn-primary');
+  if (btn) { btn.textContent = 'Preparando pagamento...'; btn.disabled = true; }
 
-  closeCart();
+  try {
+    const resp = await fetch('/.netlify/functions/create-preference', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        items: cart.map(x => ({ name: x.name, price: x.price, qty: x.qty }))
+      })
+    });
+
+    if (!resp.ok) throw new Error('preferência não criada');
+    const data = await resp.json();
+    if (!data.checkoutUrl) throw new Error('sem link de checkout');
+
+    // Guarda o carrinho pra reconstruir a mensagem quando o cliente VOLTAR
+    // do Mercado Pago (a página recarrega no meio do caminho e perde a
+    // variável `cart` — por isso salvamos o essencial antes de sair).
+    sessionStorage.setItem('nes_pending_order', JSON.stringify({
+      itens: cart.map(x => `${x.qty}x ${x.name}`).join(', '),
+      total: cart.reduce((s, x) => s + x.price * x.qty, 0)
+    }));
+
+    // Redireciona de verdade pro Mercado Pago. O pagamento acontece
+    // INTEIRO lá — este site nunca vê número de cartão.
+    window.location.href = data.checkoutUrl;
+
+  } catch (err) {
+    // FALLBACK: Mercado Pago ainda não configurado (ou instável).
+    // Não deixa o cliente na mão — mas avisa com honestidade que é teste.
+    console.log('Checkout real indisponível, usando confirmação local:', err.message);
+    const total = cart.reduce((s, x) => s + x.price * x.qty, 0);
+    const itensTxt = cart.map(x => `${x.qty}x ${x.name}`).join(', ');
+    closeCart();
+    openNayra();
+    setTimeout(() => addNayraMessage(
+      `Pedido recebido! 🎉 Você está levando: <strong>${itensTxt}</strong>.<br><br>` +
+      `Total: <strong>R$ ${total.toFixed(2).replace('.', ',')}</strong>.<br><br>` +
+      `O checkout de pagamento ainda está sendo configurado — mas o fluxo até aqui já está valendo! 😊`, []), 300);
+    cart = [];
+    updateCartBadge();
+    renderCart();
+    if (btn) { btn.textContent = 'Finalizar Compra'; btn.disabled = false; }
+  }
+}
+
+// ── RETORNO DO MERCADO PAGO ─────────────────────────────────────────────────
+// O cliente saiu do site, pagou (ou não) no Mercado Pago, e voltou. Lemos o
+// resultado pela URL (?pagamento=aprovado/recusado/pendente).
+//
+// ⚠️ HONESTIDADE TÉCNICA: isso é só para dar feedback IMEDIATO na tela — não
+// é a confirmação de verdade. Alguém poderia digitar "?pagamento=aprovado"
+// na barra de endereço sem ter pago nada. A confirmação real, à prova de
+// fraude, vem do WEBHOOK (servidor conversando direto com o Mercado Pago),
+// que ainda vamos construir. Por ora, isso é só a experiência visual.
+function handlePaymentReturn() {
+  const params = new URLSearchParams(window.location.search);
+  const status = params.get('pagamento');
+  if (!status) return;
+
+  // limpa a URL pra um F5 não repetir a mensagem
+  window.history.replaceState({}, '', window.location.pathname);
+
+  const pendente = JSON.parse(sessionStorage.getItem('nes_pending_order') || 'null');
+  sessionStorage.removeItem('nes_pending_order');
+  const itensTxt = pendente ? pendente.itens : 'seu pedido';
+  const totalTxt = pendente ? 'R$ ' + pendente.total.toFixed(2).replace('.', ',') : '';
+
   openNayra();
-  setTimeout(() => addNayraMessage(
-    `Pedido recebido! 🎉 Você está levando: <strong>${itensTxt}</strong>.<br><br>` +
-    `Total: <strong>R$ ${total.toFixed(2).replace('.', ',')}</strong>.<br><br>` +
-    `Como esse é um ambiente de testes, o pagamento ainda não está ativo — mas é exatamente aqui que vamos plugar o checkout real depois. Obrigada pela compra! 😊`, []), 300);
-  cart = [];
-  updateCartBadge();
-  renderCart();
+
+  if (status === 'aprovado') {
+    // Só AQUI marcamos a sessão como convertida — depois de voltar com sinal
+    // de aprovação, não no clique. É mais honesto com o funil da Central.
+    fetch('/.netlify/functions/session-data', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'checkout', valor: pendente ? pendente.total : 0 })
+    }).catch(() => {});
+    setTimeout(() => addNayraMessage(
+      `Pagamento aprovado! 🎉🎉 Você levou: <strong>${itensTxt}</strong>${totalTxt ? ' — ' + totalTxt : ''}.<br><br>Muito obrigada pela confiança! 💛`, []), 400);
+  } else if (status === 'pendente') {
+    setTimeout(() => addNayraMessage(
+      `Seu pagamento está sendo processado! ⏳ Assim que for confirmado eu te aviso por aqui. Enquanto isso, fica à vontade pra continuar olhando a loja.`, []), 400);
+  } else {
+    setTimeout(() => addNayraMessage(
+      `Ih, seu pagamento não foi concluído. 😕 Sem problema — se quiser tentar de novo ou tiver alguma dúvida, é só me chamar!`, []), 400);
+  }
 }
 
 // ── M.I.S.S — moderação (Supabase é o ÚNICO dono do ban) ──
@@ -1239,6 +1307,9 @@ function showToast(msg) {
 }
 
 renderProducts(products);
+
+// Se o cliente está voltando do Mercado Pago (?pagamento=...), trata aqui.
+handlePaymentReturn();
 
 // Balão proativo: a Nayra puxa assunto depois de um tempo navegando (uma vez por visita)
 setTimeout(showNayraTeaser, 11000);
