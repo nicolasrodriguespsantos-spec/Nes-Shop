@@ -62,6 +62,9 @@ export default async (req) => {
     auto_return: 'approved',
     statement_descriptor: 'NES SHOP',
     external_reference: externalRef,
+    // Para onde o Mercado Pago vai notificar (webhook) quando o pagamento mudar
+    // de status. É esta URL que recebe a confirmação à prova de fraude.
+    notification_url: baseUrl + '/.netlify/functions/mp-webhook',
   };
 
   try {
