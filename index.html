@@ -5,6 +5,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>N.E.S Shop — Marketplace Premium</title>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<script>
+  // Aplica o tema salvo ANTES da página desenhar, pra não piscar escuro→claro
+  try { if ((JSON.parse(localStorage.getItem('nes_prefs')||'{}')).theme === 'light') document.documentElement.classList.add('theme-light'); } catch (e) {}
+</script>
 <style>
   :root {
     --black:#0a0a0a; --dark:#111; --card:#161616; --border:#222;
@@ -263,6 +267,59 @@
   @media (min-width:1300px) {
     .products-grid { grid-template-columns:repeat(5,1fr); }
   }
+
+  /* ═══════════════════════════════════════════════════════════
+     TEMA CLARO  ·  troca só as variáveis + alguns fundos literais.
+     A classe .theme-light fica no <html>, então tudo herda.
+     ═══════════════════════════════════════════════════════════ */
+  html.theme-light {
+    --black:#f4f1ea;    /* fundo principal (agora claro) */
+    --dark:#ffffff;     /* nav, seções, gavetas */
+    --card:#ffffff;     /* cards */
+    --border:#e5dfd4;   /* linhas suaves */
+    --gold:#9a7b2e;     /* dourado mais fechado pra contrastar no claro */
+    --gold-light:#b6902f;
+    --white:#1c1a17;    /* texto principal (agora escuro) */
+    --muted:#6f6a61;    /* texto secundário */
+  }
+  html.theme-light body { background:var(--black); }
+  html.theme-light nav { background:rgba(255,255,255,0.9); }
+  html.theme-light .cat-bar { background:rgba(244,241,234,0.96); }
+  html.theme-light .bottom-bar { background:rgba(255,255,255,0.96); }
+  html.theme-light .product-img { background:linear-gradient(135deg,#efeae0,#e5ddcf); }
+  html.theme-light .cart-item-img { background:#f4f1ea; }
+  html.theme-light .toggle-knob { background:#fff; }
+
+  /* ═══════════════════════════════════════════════════════════
+     CONFIGURAÇÕES DA INTERFACE  (modal central)
+     ═══════════════════════════════════════════════════════════ */
+  .settings-overlay { position:fixed; inset:0; z-index:470; background:rgba(0,0,0,0.7); backdrop-filter:blur(4px); display:none; align-items:center; justify-content:center; padding:20px; }
+  .settings-overlay.open { display:flex; }
+  .settings-panel { width:100%; max-width:420px; background:var(--dark); border:1px solid var(--border); border-radius:18px; overflow:hidden; animation:settingsIn 0.25s ease; box-shadow:0 20px 60px rgba(0,0,0,0.4); }
+  @keyframes settingsIn { from{opacity:0; transform:translateY(12px) scale(0.98);} to{opacity:1; transform:none;} }
+  .settings-header { display:flex; align-items:center; justify-content:space-between; padding:18px 22px; border-bottom:1px solid var(--border); }
+  .settings-title { font-family:'Playfair Display',serif; font-size:19px; font-weight:700; }
+  .settings-close { background:none; border:none; color:var(--muted); font-size:24px; cursor:pointer; line-height:1; }
+  .settings-body { padding:6px 22px 22px; }
+  .settings-section-label { font-size:10px; letter-spacing:2px; text-transform:uppercase; color:var(--muted); margin:18px 0 2px; }
+  .setting-row { display:flex; align-items:center; justify-content:space-between; gap:18px; padding:14px 0; }
+  .setting-name { font-size:14px; font-weight:600; }
+  .setting-desc { font-size:12px; color:var(--muted); margin-top:3px; line-height:1.45; }
+  .settings-divider { height:1px; background:var(--border); margin:4px 0; }
+
+  .theme-switch { display:flex; gap:3px; background:var(--card); border:1px solid var(--border); border-radius:10px; padding:3px; flex-shrink:0; }
+  .theme-opt { background:none; border:none; color:var(--muted); font-size:12px; padding:7px 11px; border-radius:8px; cursor:pointer; font-family:'Inter',sans-serif; transition:background 0.15s,color 0.15s; white-space:nowrap; }
+  .theme-opt.active { background:var(--gold); color:var(--black); font-weight:600; }
+
+  .toggle { width:48px; height:27px; border-radius:14px; background:var(--border); border:none; cursor:pointer; position:relative; transition:background 0.2s; flex-shrink:0; padding:0; }
+  .toggle.on { background:var(--gold); }
+  .toggle-knob { position:absolute; top:3px; left:3px; width:21px; height:21px; border-radius:50%; background:#fff; transition:transform 0.2s; box-shadow:0 1px 3px rgba(0,0,0,0.3); }
+  .toggle.on .toggle-knob { transform:translateX(21px); }
+
+  /* Engrenagem no header (desktop) */
+  .nav-gear { display:none; align-items:center; justify-content:center; background:none; border:none; color:var(--white); cursor:pointer; padding:4px; }
+  .nav-gear svg { width:20px; height:20px; }
+  @media (min-width:900px) { .nav-gear { display:flex; } }
 </style>
 </head>
 <body>
@@ -279,6 +336,9 @@
   <div class="nav-actions">
     <button class="nav-search-icon" onclick="openMobileSearch()" aria-label="Buscar">
       <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+    </button>
+    <button class="nav-gear" onclick="openSettings()" aria-label="Configurações">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
     </button>
     <button onclick="openCart()" style="position:relative">
       <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
@@ -411,6 +471,9 @@
     <div class="mm-divider"></div>
     <button class="mm-link" onclick="navCategory('all')"><span class="mm-emoji">🛍️</span> Ver tudo</button>
     <button class="mm-link" onclick="showToast('Minha conta chega em breve 😊')"><span class="mm-emoji">👤</span> Minha conta <span class="mm-soon">em breve</span></button>
+    <div class="mm-divider"></div>
+    <button class="mm-link" onclick="openNayra()"><span class="mm-emoji">💬</span> Falar com a Nayra</button>
+    <button class="mm-link" onclick="openSettings()"><span class="mm-emoji">⚙️</span> Configurações</button>
     <div class="mm-foot">
       <a href="#">Sobre nós</a>
       <a href="#">Entregas</a>
@@ -445,6 +508,39 @@
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
     Conta
   </button>
+</div>
+
+<div class="settings-overlay" id="settingsOverlay" onclick="handleSettingsClick(event)">
+  <div class="settings-panel">
+    <div class="settings-header">
+      <div class="settings-title">Configurações</div>
+      <button class="settings-close" onclick="closeSettings()">×</button>
+    </div>
+    <div class="settings-body">
+      <div class="settings-section-label">Aparência</div>
+      <div class="setting-row">
+        <div class="setting-info">
+          <div class="setting-name">Tema</div>
+          <div class="setting-desc">Alterna entre claro e escuro.</div>
+        </div>
+        <div class="theme-switch">
+          <button class="theme-opt" data-theme="dark" onclick="setTheme('dark')">🌙 Escuro</button>
+          <button class="theme-opt" data-theme="light" onclick="setTheme('light')">☀️ Claro</button>
+        </div>
+      </div>
+      <div class="settings-divider"></div>
+      <div class="settings-section-label">Atendimento</div>
+      <div class="setting-row">
+        <div class="setting-info">
+          <div class="setting-name">Bolinha da Nayra</div>
+          <div class="setting-desc">O botão flutuante da assistente. Desligado, você ainda fala com a Nayra pelo menu.</div>
+        </div>
+        <button class="toggle on" id="nayraToggle" onclick="toggleNayraBall()" role="switch" aria-checked="true">
+          <span class="toggle-knob"></span>
+        </button>
+      </div>
+    </div>
+  </div>
 </div>
 
 <div class="toast" id="toast"></div>
@@ -1486,59 +1582,4 @@ setTimeout(showNayraTeaser, 11000);
 //  NAVEGAÇÃO — PASSADA 1  (dois trajes + navegação)
 //  Bloco isolado: NÃO altera o cérebro da Nayra. Só orquestra
 //  o menu, a busca mobile, a bottom bar e a barra de categorias.
-// ═══════════════════════════════════════════════════════════
-
-// Menu lateral (hambúrguer)
-function openMenu()  { document.getElementById('mobileMenu').classList.add('open'); }
-function closeMenu() { document.getElementById('mobileMenu').classList.remove('open'); }
-function handleMenuClick(e) { if (e.target === e.currentTarget) closeMenu(); }
-
-// Busca mobile em tela cheia
-function openMobileSearch() {
-  const o = document.getElementById('msearch');
-  o.classList.add('open');
-  const i = document.getElementById('msearchInput');
-  setTimeout(() => { if (i) i.focus(); }, 60);
-}
-function closeMobileSearch() { document.getElementById('msearch').classList.remove('open'); }
-
-// Início: volta ao topo (e fecha o menu, se aberto)
-function goHome() { window.scrollTo({ top: 0, behavior: 'smooth' }); closeMenu(); }
-
-// Navega por categoria — reaproveita as funções que já existem no cérebro
-function navCategory(cat) {
-  if (cat === 'all') {
-    document.getElementById('sectionTitle').textContent = 'Todos os Produtos';
-    renderProducts(products);
-    document.getElementById('produtos').scrollIntoView({ behavior: 'smooth' });
-  } else {
-    filterByCategory(cat);   // já existe no cérebro: filtra + rola até os produtos
-  }
-  setActiveCatLink(cat);
-  closeMenu();
-}
-
-// Marca a categoria ativa na barra do desktop
-function setActiveCatLink(cat) {
-  document.querySelectorAll('.cat-link').forEach(el => {
-    el.classList.toggle('active', el.dataset.cat === cat);
-  });
-}
-
-// Espelha o contador do carrinho na bottom bar (mobile)
-function syncBottomBadge() {
-  const b = document.getElementById('cartBadgeBottom');
-  if (!b) return;
-  const total = cart.reduce((s, x) => s + x.qty, 0);
-  b.textContent = total;
-  b.style.display = total ? 'flex' : 'none';
-}
-
-// Envolve o updateCartBadge original SEM reescrevê-lo: sempre que o
-// carrinho muda, o badge de cima E o de baixo são atualizados juntos.
-const _origUpdateCartBadge = updateCartBadge;
-updateCartBadge = function () { _origUpdateCartBadge(); syncBottomBadge(); };
-syncBottomBadge();
-</script>
-</body>
-</html>
+// ═════════════════════════════════════════════════════════
