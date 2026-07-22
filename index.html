@@ -1583,3 +1583,129 @@ function renderCart() {
   footer.style.display = 'block';
   el.innerHTML = cart.map(p => `
     <div class="cart-
+  <div class="cart-item-img">${p.emoji}</div>
+      <div class="cart-item-info"><div class="cart-item-name">${p.name}${p.qty>1?` (x${p.qty})`:''}</div><div class="cart-item-price">R$ ${(p.price*p.qty).toFixed(2).replace('.',',')}</div></div>
+      <button class="cart-item-remove" onclick="removeFromCart(${p.id})">×</button>
+    </div>`).join('');
+  const total = cart.reduce((s,x)=>s+x.price*x.qty,0);
+  document.getElementById('cartTotal').textContent = `R$ ${total.toFixed(2).replace('.',',')}`;
+}
+function openCart() { document.getElementById('cartOverlay').classList.add('open'); renderCart(); }
+function closeCart() { document.getElementById('cartOverlay').classList.remove('open'); }
+function handleCartClick(e) { if (e.target === e.currentTarget) closeCart(); }
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2200);
+}
+
+renderProducts(products);
+
+// Se o cliente está voltando do Mercado Pago (?pagamento=...), trata aqui.
+handlePaymentReturn();
+
+// Balão proativo: a Nayra puxa assunto depois de um tempo navegando (uma vez por visita)
+setTimeout(showNayraTeaser, 11000);
+
+// ═══════════════════════════════════════════════════════════
+//  NAVEGAÇÃO — PASSADA 1  (dois trajes + navegação)
+//  Agora no MESMO script do cérebro (fundido), pra não depender
+//  de um segundo bloco inline separado.
+// ═══════════════════════════════════════════════════════════
+window.__navReady = true; // sinal pro detector: este bloco começou a rodar
+
+// Menu lateral (hambúrguer)
+function openMenu()  { document.getElementById('mobileMenu').classList.add('open'); }
+function closeMenu() { document.getElementById('mobileMenu').classList.remove('open'); }
+function handleMenuClick(e) { if (e.target === e.currentTarget) closeMenu(); }
+
+// Busca mobile em tela cheia
+function openMobileSearch() {
+  const o = document.getElementById('msearch');
+  o.classList.add('open');
+  const i = document.getElementById('msearchInput');
+  setTimeout(() => { if (i) i.focus(); }, 60);
+}
+function closeMobileSearch() { document.getElementById('msearch').classList.remove('open'); }
+
+// Início: volta ao topo (e fecha o menu, se aberto)
+function goHome() { window.scrollTo({ top: 0, behavior: 'smooth' }); closeMenu(); }
+
+// Navega por categoria — reaproveita as funções que já existem no cérebro
+function navCategory(cat) {
+  if (cat === 'all') {
+    document.getElementById('sectionTitle').textContent = 'Todos os Produtos';
+    renderProducts(products);
+    document.getElementById('produtos').scrollIntoView({ behavior: 'smooth' });
+  } else {
+    filterByCategory(cat);   // já existe no cérebro: filtra + rola até os produtos
+  }
+  setActiveCatLink(cat);
+  closeMenu();
+}
+
+// Marca a categoria ativa na barra do desktop
+function setActiveCatLink(cat) {
+  document.querySelectorAll('.cat-link').forEach(el => {
+    el.classList.toggle('active', el.dataset.cat === cat);
+  });
+}
+
+// Espelha o contador do carrinho na bottom bar (mobile)
+function syncBottomBadge() {
+  const b = document.getElementById('cartBadgeBottom');
+  if (!b) return;
+  const total = cart.reduce((s, x) => s + x.qty, 0);
+  b.textContent = total;
+  b.style.display = total ? 'flex' : 'none';
+}
+
+// Envolve o updateCartBadge original SEM reescrevê-lo: sempre que o
+// carrinho muda, o badge de cima E o de baixo são atualizados juntos.
+const _origUpdateCartBadge = updateCartBadge;
+updateCartBadge = function () { _origUpdateCartBadge(); syncBottomBadge(); };
+syncBottomBadge();
+
+// ═══════════════════════════════════════════════════════════
+//  CONFIGURAÇÕES DA INTERFACE  (tema claro/escuro + bolinha da Nayra)
+//  Preferências salvas no aparelho da pessoa (localStorage), com
+//  try/catch pra nunca quebrar caso o navegador bloqueie o storage.
+// ═══════════════════════════════════════════════════════════
+function openSettings()  { closeMenu(); document.getElementById('settingsOverlay').classList.add('open'); }
+function closeSettings() { document.getElementById('settingsOverlay').classList.remove('open'); }
+function handleSettingsClick(e) { if (e.target === e.currentTarget) closeSettings(); }
+
+const NES_PREFS_KEY = 'nes_prefs';
+function loadPrefs() { try { return JSON.parse(localStorage.getItem(NES_PREFS_KEY)) || {}; } catch (_) { return {}; } }
+function savePrefs()  { try { localStorage.setItem(NES_PREFS_KEY, JSON.stringify(nesPrefs)); } catch (_) {} }
+let nesPrefs = loadPrefs();
+
+// Tema (a classe fica no <html>, então todo o site herda de uma vez)
+function setTheme(theme) {
+  const light = theme === 'light';
+  document.documentElement.classList.toggle('theme-light', light);
+  document.querySelectorAll('.theme-opt').forEach(el => el.classList.toggle('active', el.dataset.theme === theme));
+  nesPrefs.theme = theme; savePrefs();
+}
+
+// Bolinha da Nayra: liga/desliga o botão flutuante + o balão proativo
+let nayraBallOn = true;
+function applyNayraBall(on) {
+  nayraBallOn = on;
+  const btn = document.querySelector('.nayra-btn');
+  if (btn) btn.style.display = on ? 'flex' : 'none';
+  const t = document.getElementById('nayraToggle');
+  if (t) { t.classList.toggle('on', on); t.setAttribute('aria-checked', on ? 'true' : 'false'); }
+  // teaserDismissed é global (declarado no cérebro): desligar a bolinha também cala o balão proativo
+  teaserDismissed = !on;
+  if (!on) hideNayraTeaser();
+}
+function toggleNayraBall() { applyNayraBall(!nayraBallOn); nesPrefs.nayraBall = nayraBallOn; savePrefs(); }
+
+// Aplica as preferências salvas assim que o site abre
+setTheme(nesPrefs.theme === 'light' ? 'light' : 'dark');
+applyNayraBall(nesPrefs.nayraBall === false ? false : true);
+</script>
+</body>
+</html>
