@@ -164,23 +164,138 @@
   .footer-links a { font-size:12px; color:var(--muted); text-decoration:none; transition:color 0.2s; }
   .footer-links a:hover { color:var(--gold); }
   .footer-copy { font-size:11px; color:#555; }
+
+  /* ═══════════════════════════════════════════════════════════
+     NAVEGAÇÃO — PASSADA 1  ·  "um site, dois trajes"
+     Base = traje mobile (mobile-first). O @media de desktop no
+     fim troca pro traje de PC. Nada aqui toca no cérebro da Nayra.
+     ═══════════════════════════════════════════════════════════ */
+
+  /* Âncoras de rolagem não ficam escondidas atrás do header fixo */
+  #produtos, #categorias { scroll-margin-top:72px; }
+
+  /* Header adaptável (base = mobile: hambúrguer à ESQUERDA, logo ao centro) */
+  nav { gap:8px; }
+  .nav-hamburger { display:flex; align-items:center; justify-content:center; background:none; border:none; color:var(--white); cursor:pointer; padding:4px; }
+  .nav-hamburger svg { width:24px; height:24px; }
+  .nav-logo { flex:1; text-align:center; }
+  .nav .nav-search { display:none; }          /* mobile: busca sai do header */
+  .nav-search-icon { display:flex; align-items:center; justify-content:center; background:none; border:none; color:var(--white); cursor:pointer; padding:4px; }
+  .nav-search-icon svg { width:20px; height:20px; }
+  .cat-bar { display:none; }                  /* mobile: barra de categorias escondida */
+
+  /* Menu lateral (hambúrguer) — desliza da ESQUERDA */
+  .mobile-menu-overlay { position:fixed; inset:0; z-index:450; background:rgba(0,0,0,0.6); display:none; }
+  .mobile-menu-overlay.open { display:block; }
+  .mobile-menu { position:fixed; top:0; left:0; bottom:0; width:82%; max-width:320px; background:var(--dark); border-right:1px solid var(--border); display:flex; flex-direction:column; transform:translateX(-100%); transition:transform 0.28s ease; overflow-y:auto; }
+  .mobile-menu-overlay.open .mobile-menu { transform:translateX(0); }
+  .mobile-menu-header { display:flex; align-items:center; justify-content:space-between; padding:18px 20px; border-bottom:1px solid var(--border); }
+  .mobile-menu-close { background:none; border:none; color:var(--muted); font-size:24px; cursor:pointer; line-height:1; }
+  .mm-section-label { font-size:10px; letter-spacing:2px; text-transform:uppercase; color:var(--muted); padding:18px 20px 6px; }
+  .mm-link { display:flex; align-items:center; gap:12px; padding:13px 20px; color:var(--white); font-size:14px; cursor:pointer; border:none; background:none; width:100%; text-align:left; font-family:'Inter',sans-serif; transition:background 0.15s; }
+  .mm-link:hover { background:var(--card); }
+  .mm-emoji { font-size:18px; width:22px; text-align:center; flex-shrink:0; }
+  .mm-featured-tag { margin-left:auto; font-size:9px; letter-spacing:1px; text-transform:uppercase; color:var(--gold); border:1px solid rgba(201,168,76,0.4); border-radius:20px; padding:2px 8px; }
+  .mm-soon { margin-left:auto; font-size:9px; color:var(--muted); letter-spacing:1px; text-transform:uppercase; }
+  .mm-divider { height:1px; background:var(--border); margin:8px 0; }
+  .mm-foot { margin-top:auto; padding:16px 20px 22px; border-top:1px solid var(--border); }
+  .mm-foot a { display:block; color:var(--muted); font-size:12px; text-decoration:none; padding:6px 0; }
+  .mm-foot a:hover { color:var(--gold); }
+
+  /* Busca mobile em tela cheia (aberta pelo ícone 🔍 ou pela bottom bar) */
+  .msearch-overlay { position:fixed; inset:0; z-index:460; background:var(--black); display:none; flex-direction:column; }
+  .msearch-overlay.open { display:flex; }
+  .msearch-bar { display:flex; align-items:center; gap:10px; padding:14px 16px; border-bottom:1px solid var(--border); }
+  .msearch-bar input { flex:1; background:var(--dark); border:1px solid var(--border); border-radius:10px; padding:11px 14px; color:var(--white); font-size:15px; outline:none; font-family:'Inter',sans-serif; }
+  .msearch-bar input:focus { border-color:var(--gold); }
+  .msearch-cancel { background:none; border:none; color:var(--gold); font-size:14px; cursor:pointer; font-family:'Inter',sans-serif; white-space:nowrap; }
+  .msearch-hint { color:var(--muted); font-size:13px; padding:22px 16px; text-align:center; }
+
+  /* Bottom bar (mobile): Início · Buscar · Carrinho · Conta */
+  .bottom-bar { position:fixed; left:0; right:0; bottom:0; z-index:250; display:flex; background:rgba(10,10,10,0.96); backdrop-filter:blur(12px); border-top:1px solid var(--border); height:60px; }
+  .bb-item { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px; background:none; border:none; color:var(--muted); cursor:pointer; font-family:'Inter',sans-serif; font-size:10px; letter-spacing:0.3px; position:relative; transition:color 0.15s; }
+  .bb-item svg { width:21px; height:21px; }
+  .bb-item.active, .bb-item:hover { color:var(--gold); }
+  .bb-badge { position:absolute; top:6px; right:50%; transform:translateX(18px); background:var(--gold); color:var(--black); font-size:9px; font-weight:700; min-width:16px; height:16px; padding:0 4px; border-radius:8px; display:none; align-items:center; justify-content:center; }
+
+  /* Espaço pra bottom bar não cobrir o rodapé; botão da Nayra sobe */
+  body { padding-bottom:60px; }
+  .nayra-btn { bottom:76px; }
+  .nayra-teaser { bottom:142px; }
+  .toast { bottom:130px; }
+
+  /* ═══════════════════════════════════════════════════════════
+     TRAJE DE DESKTOP (≥900px): header rico + barra de categorias,
+     conteúdo centralizado pra "ordem que acolhe", sem esticar.
+     ═══════════════════════════════════════════════════════════ */
+  @media (min-width:900px) {
+    #produtos, #categorias { scroll-margin-top:124px; }
+
+    nav { padding:0 40px; }
+    .nav-hamburger { display:none; }
+    .nav-search-icon { display:none; }
+    .nav .nav-search { display:flex; }
+    .nav-logo { flex:none; text-align:left; }
+
+    .cat-bar { display:block; position:fixed; top:60px; left:0; right:0; z-index:99; background:rgba(17,17,17,0.96); backdrop-filter:blur(12px); border-bottom:1px solid var(--border); }
+    .cat-bar-inner { max-width:1200px; margin:0 auto; display:flex; align-items:center; gap:4px; padding:0 40px; height:48px; }
+    .cat-link { background:none; border:none; color:var(--muted); font-size:13px; font-weight:500; cursor:pointer; padding:8px 16px; border-radius:8px; font-family:'Inter',sans-serif; position:relative; transition:color 0.15s,background 0.15s; }
+    .cat-link:hover { color:var(--white); background:rgba(255,255,255,0.04); }
+    .cat-link.active { color:var(--gold); }
+    .cat-link.featured { padding-right:22px; }
+    .cat-link.featured::after { content:''; position:absolute; top:10px; right:9px; width:5px; height:5px; border-radius:50%; background:var(--gold); }
+
+    .bottom-bar { display:none; }
+    body { padding-bottom:0; }
+    .nayra-btn { bottom:32px; right:32px; }
+    .nayra-teaser { bottom:100px; right:32px; }
+    .toast { bottom:100px; }
+
+    .hero { max-width:1280px; margin:0 auto; padding:160px 40px 90px; }
+    section { padding:76px 40px; }
+    .section-header, .products-grid, .cat-grid { max-width:1200px; margin-left:auto; margin-right:auto; }
+    .cat-grid { grid-template-columns:repeat(4,1fr); gap:16px; }
+    .products-grid { grid-template-columns:repeat(4,1fr); gap:20px; }
+    .footer-links, .footer-logo, .footer-tagline, .footer-copy { max-width:1200px; margin-left:auto; margin-right:auto; }
+    footer { padding:56px 40px 40px; }
+  }
+
+  @media (min-width:1300px) {
+    .products-grid { grid-template-columns:repeat(5,1fr); }
+  }
 </style>
 </head>
 <body>
 
 <nav>
+  <button class="nav-hamburger" onclick="openMenu()" aria-label="Abrir menu">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+  </button>
   <div class="nav-logo">N.E.S<span> Shop</span></div>
   <div class="nav-search">
     <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
     <input type="text" id="searchInput" placeholder="Buscar produtos..." oninput="filterProducts(this.value)"/>
   </div>
   <div class="nav-actions">
+    <button class="nav-search-icon" onclick="openMobileSearch()" aria-label="Buscar">
+      <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+    </button>
     <button onclick="openCart()" style="position:relative">
       <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
       <span class="cart-badge" id="cartBadge" style="display:none">0</span>
     </button>
   </div>
 </nav>
+
+<div class="cat-bar">
+  <div class="cat-bar-inner">
+    <button class="cat-link active" data-cat="all" onclick="navCategory('all')">Todos</button>
+    <button class="cat-link featured" data-cat="Eletrônicos" onclick="navCategory('Eletrônicos')">Eletrônicos</button>
+    <button class="cat-link featured" data-cat="Casa" onclick="navCategory('Casa')">Casa &amp; Deco</button>
+    <button class="cat-link" data-cat="Moda" onclick="navCategory('Moda')">Moda</button>
+    <button class="cat-link" data-cat="Brinquedos" onclick="navCategory('Brinquedos')">Brinquedos</button>
+  </div>
+</div>
 
 <div class="hero">
   <div class="hero-badge">✦ Marketplace Premium</div>
@@ -279,6 +394,57 @@
       <button class="btn-primary" style="width:100%;text-align:center" onclick="checkout()">Finalizar Compra</button>
     </div>
   </div>
+</div>
+
+<div class="mobile-menu-overlay" id="mobileMenu" onclick="handleMenuClick(event)">
+  <div class="mobile-menu">
+    <div class="mobile-menu-header">
+      <div class="nav-logo" style="flex:none;text-align:left">N.E.S<span> Shop</span></div>
+      <button class="mobile-menu-close" onclick="closeMenu()">×</button>
+    </div>
+    <button class="mm-link" onclick="goHome()"><span class="mm-emoji">🏠</span> Início</button>
+    <div class="mm-section-label">Categorias</div>
+    <button class="mm-link" onclick="navCategory('Eletrônicos')"><span class="mm-emoji">📱</span> Eletrônicos <span class="mm-featured-tag">Destaque</span></button>
+    <button class="mm-link" onclick="navCategory('Casa')"><span class="mm-emoji">🏠</span> Casa &amp; Deco <span class="mm-featured-tag">Destaque</span></button>
+    <button class="mm-link" onclick="navCategory('Moda')"><span class="mm-emoji">👗</span> Moda</button>
+    <button class="mm-link" onclick="navCategory('Brinquedos')"><span class="mm-emoji">🧸</span> Brinquedos</button>
+    <div class="mm-divider"></div>
+    <button class="mm-link" onclick="navCategory('all')"><span class="mm-emoji">🛍️</span> Ver tudo</button>
+    <button class="mm-link" onclick="showToast('Minha conta chega em breve 😊')"><span class="mm-emoji">👤</span> Minha conta <span class="mm-soon">em breve</span></button>
+    <div class="mm-foot">
+      <a href="#">Sobre nós</a>
+      <a href="#">Entregas</a>
+      <a href="#">Contato</a>
+    </div>
+  </div>
+</div>
+
+<div class="msearch-overlay" id="msearch">
+  <div class="msearch-bar">
+    <input id="msearchInput" type="text" placeholder="Buscar produtos..." oninput="filterProducts(this.value)" onkeydown="if(event.key==='Enter'){closeMobileSearch();document.getElementById('produtos').scrollIntoView();}"/>
+    <button class="msearch-cancel" onclick="closeMobileSearch()">Cancelar</button>
+  </div>
+  <div class="msearch-hint">Digite o que procura — a busca acontece na hora.</div>
+</div>
+
+<div class="bottom-bar">
+  <button class="bb-item active" onclick="goHome()">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+    Início
+  </button>
+  <button class="bb-item" onclick="openMobileSearch()">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+    Buscar
+  </button>
+  <button class="bb-item" onclick="openCart()">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+    <span class="bb-badge" id="cartBadgeBottom">0</span>
+    Carrinho
+  </button>
+  <button class="bb-item" onclick="openMenu()">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+    Conta
+  </button>
 </div>
 
 <div class="toast" id="toast"></div>
@@ -1313,6 +1479,66 @@ handlePaymentReturn();
 
 // Balão proativo: a Nayra puxa assunto depois de um tempo navegando (uma vez por visita)
 setTimeout(showNayraTeaser, 11000);
+</script>
+
+<script>
+// ═══════════════════════════════════════════════════════════
+//  NAVEGAÇÃO — PASSADA 1  (dois trajes + navegação)
+//  Bloco isolado: NÃO altera o cérebro da Nayra. Só orquestra
+//  o menu, a busca mobile, a bottom bar e a barra de categorias.
+// ═══════════════════════════════════════════════════════════
+
+// Menu lateral (hambúrguer)
+function openMenu()  { document.getElementById('mobileMenu').classList.add('open'); }
+function closeMenu() { document.getElementById('mobileMenu').classList.remove('open'); }
+function handleMenuClick(e) { if (e.target === e.currentTarget) closeMenu(); }
+
+// Busca mobile em tela cheia
+function openMobileSearch() {
+  const o = document.getElementById('msearch');
+  o.classList.add('open');
+  const i = document.getElementById('msearchInput');
+  setTimeout(() => { if (i) i.focus(); }, 60);
+}
+function closeMobileSearch() { document.getElementById('msearch').classList.remove('open'); }
+
+// Início: volta ao topo (e fecha o menu, se aberto)
+function goHome() { window.scrollTo({ top: 0, behavior: 'smooth' }); closeMenu(); }
+
+// Navega por categoria — reaproveita as funções que já existem no cérebro
+function navCategory(cat) {
+  if (cat === 'all') {
+    document.getElementById('sectionTitle').textContent = 'Todos os Produtos';
+    renderProducts(products);
+    document.getElementById('produtos').scrollIntoView({ behavior: 'smooth' });
+  } else {
+    filterByCategory(cat);   // já existe no cérebro: filtra + rola até os produtos
+  }
+  setActiveCatLink(cat);
+  closeMenu();
+}
+
+// Marca a categoria ativa na barra do desktop
+function setActiveCatLink(cat) {
+  document.querySelectorAll('.cat-link').forEach(el => {
+    el.classList.toggle('active', el.dataset.cat === cat);
+  });
+}
+
+// Espelha o contador do carrinho na bottom bar (mobile)
+function syncBottomBadge() {
+  const b = document.getElementById('cartBadgeBottom');
+  if (!b) return;
+  const total = cart.reduce((s, x) => s + x.qty, 0);
+  b.textContent = total;
+  b.style.display = total ? 'flex' : 'none';
+}
+
+// Envolve o updateCartBadge original SEM reescrevê-lo: sempre que o
+// carrinho muda, o badge de cima E o de baixo são atualizados juntos.
+const _origUpdateCartBadge = updateCartBadge;
+updateCartBadge = function () { _origUpdateCartBadge(); syncBottomBadge(); };
+syncBottomBadge();
 </script>
 </body>
 </html>
