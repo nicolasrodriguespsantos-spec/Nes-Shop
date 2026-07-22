@@ -22,11 +22,54 @@
 // A validação real só ocorre em produção, com pagamento real (pós-CNPJ).
 // ─────────────────────────────────────────────────────────────────────────────
 
+import crypto from 'node:crypto';
+
 function ok() {
   // Responder 200 é o que diz ao Mercado Pago "recebi, pode parar de reenviar".
   return new Response(JSON.stringify({ received: true }), {
     status: 200, headers: { 'content-type': 'application/json' },
   });
+}
+
+function unauthorized() {
+  // 403: a notificação não passou na verificação de assinatura — pode ser
+  // um impostor tentando forjar um "pagamento aprovado". Rejeitamos.
+  return new Response(JSON.stringify({ error: 'assinatura inválida' }), {
+    status: 403, headers: { 'content-type': 'application/json' },
+  });
+}
+
+// ── VALIDA A ASSINATURA (x-signature) DO MERCADO PAGO ──
+// Prova que a notificação veio MESMO do Mercado Pago e não foi adulterada.
+// O MP manda um header "x-signature: ts=...,v1=..." e um "x-request-id".
+// A gente remonta o "manifest" no formato exato deles e recalcula o HMAC-SHA256
+// com a assinatura secreta. Se bater com o v1, é autêntico.
+function assinaturaValida(req, dataId) {
+  const secret = process.env.MP_WEBHOOK_SECRET;
+  if (!secret) return true; // sem segredo configurado → não bloqueia (degrada com elegância)
+
+  const xSignature = req.headers.get('x-signature') || '';
+  const xRequestId = req.headers.get('x-request-id') || '';
+  if (!xSignature) return false;
+
+  let ts = null, v1 = null;
+  for (const part of xSignature.split(',')) {
+    const [k, v] = part.split('=', 2);
+    if (!k || v === undefined) continue;
+    const key = k.trim();
+    if (key === 'ts') ts = v.trim();
+    else if (key === 'v1') v1 = v.trim();
+  }
+  if (!ts || !v1) return false;
+
+  // Formato EXATO exigido pelo Mercado Pago (a ordem e os ; importam):
+  const manifest = `id:${dataId};request-id:${xRequestId};ts:${ts};`;
+  const esperado = crypto.createHmac('sha256', secret).update(manifest).digest('hex');
+
+  // Comparação de tempo constante (evita ataque de timing).
+  const a = Buffer.from(esperado);
+  const b = Buffer.from(v1);
+  return a.length === b.length && crypto.timingSafeEqual(a, b);
 }
 
 export default async (req) => {
@@ -59,6 +102,12 @@ export default async (req) => {
   if (!paymentId) {
     console.log('webhook: sem payment id, ignorando');
     return ok();
+  }
+
+  // ── SEGURANÇA: confirma que a notificação é autêntica (veio do Mercado Pago) ──
+  if (!assinaturaValida(req, paymentId)) {
+    console.warn('webhook: assinatura inválida — notificação REJEITADA (possível impostor).');
+    return unauthorized();
   }
 
   const ACCESS_TOKEN = process.env.MP_ACCESS_TOKEN;
@@ -124,4 +173,3 @@ async function dispararEmailConfirmacao(baseUrl, dados) {
     console.error('webhook: falha ao disparar e-mail (ignorado)', e);
   }
 }
-
