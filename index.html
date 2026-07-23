@@ -9,38 +9,6 @@
   // Aplica o tema salvo ANTES da página desenhar, pra não piscar escuro→claro
   try { if ((JSON.parse(localStorage.getItem('nes_prefs')||'{}')).theme === 'light') document.documentElement.classList.add('theme-light'); } catch (e) {}
 </script>
-<script>
-  // ── DETECTOR DE ERRO TEMPORÁRIO (vamos remover depois de achar o problema) ──
-  (function () {
-    var errShown = false;
-    function banner(msg, color) {
-      var b = document.getElementById('__errbar');
-      if (!b) {
-        b = document.createElement('div'); b.id = '__errbar';
-        b.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:2147483647;padding:10px 12px;font:12px/1.45 monospace;white-space:pre-wrap;color:#fff;box-shadow:0 2px 8px rgba(0,0,0,.4)';
-        var add = function () { (document.body || document.documentElement).appendChild(b); };
-        if (document.body) add(); else document.addEventListener('DOMContentLoaded', add);
-      }
-      b.style.background = color || '#c0392b';
-      b.textContent = msg;
-    }
-    window.addEventListener('error', function (e) {
-      errShown = true;
-      banner('⚠ ERRO JS:\n' + (e.message || '?') + '\n@ ' + String(e.filename || '').split('/').pop() + ' linha ' + (e.lineno || '?'));
-    });
-    window.addEventListener('unhandledrejection', function (e) {
-      errShown = true;
-      banner('⚠ PROMESSA REJEITADA:\n' + (e.reason && e.reason.message ? e.reason.message : e.reason));
-    });
-    window.addEventListener('load', function () {
-      setTimeout(function () {
-        if (!window.__navReady && !errShown) {
-          banner('⚠ O bloco de navegação não chegou a rodar (por isso menu e busca ficam mortos), mas nenhum erro foi capturado. Me manda um print desta faixa.', '#b8860b');
-        }
-      }, 400);
-    });
-  })();
-</script>
 <style>
   :root {
     --black:#0a0a0a; --dark:#111; --card:#161616; --border:#222;
@@ -1582,8 +1550,8 @@ function renderCart() {
   if (!cart.length) { el.innerHTML = '<div class="cart-empty"><div style="font-size:48px">🛒</div><span>Seu carrinho está vazio</span></div>'; footer.style.display='none'; return; }
   footer.style.display = 'block';
   el.innerHTML = cart.map(p => `
-    <div class="cart-
-  <div class="cart-item-img">${p.emoji}</div>
+    <div class="cart-item">
+      <div class="cart-item-img">${p.emoji}</div>
       <div class="cart-item-info"><div class="cart-item-name">${p.name}${p.qty>1?` (x${p.qty})`:''}</div><div class="cart-item-price">R$ ${(p.price*p.qty).toFixed(2).replace('.',',')}</div></div>
       <button class="cart-item-remove" onclick="removeFromCart(${p.id})">×</button>
     </div>`).join('');
@@ -1613,7 +1581,6 @@ setTimeout(showNayraTeaser, 11000);
 //  Agora no MESMO script do cérebro (fundido), pra não depender
 //  de um segundo bloco inline separado.
 // ═══════════════════════════════════════════════════════════
-window.__navReady = true; // sinal pro detector: este bloco começou a rodar
 
 // Menu lateral (hambúrguer)
 function openMenu()  { document.getElementById('mobileMenu').classList.add('open'); }
