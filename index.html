@@ -320,6 +320,123 @@
   .nav-gear { display:none; align-items:center; justify-content:center; background:none; border:none; color:var(--white); cursor:pointer; padding:4px; }
   .nav-gear svg { width:20px; height:20px; }
   @media (min-width:900px) { .nav-gear { display:flex; } }
+
+  /* ═══════════════════════════════════════════════════════════
+     PASSADA 2 — filtros, página de produto e breadcrumbs
+     ═══════════════════════════════════════════════════════════ */
+
+  /* ── Breadcrumbs (só desktop) ── */
+  .breadcrumbs { display:none; align-items:center; gap:7px; font-size:12px; color:var(--muted); margin-bottom:14px; flex-wrap:wrap; }
+  .breadcrumbs button { background:none; border:none; color:var(--muted); font-size:12px; cursor:pointer; padding:0; font-family:'Inter',sans-serif; transition:color 0.15s; }
+  .breadcrumbs button:hover { color:var(--gold); }
+  .breadcrumbs .bc-sep { opacity:0.45; }
+  .breadcrumbs .bc-current { color:var(--white); }
+
+  /* ── Layout do catálogo: sidebar + grade ── */
+  .catalog-layout { display:block; }
+  .filters-panel { display:none; }
+
+  /* Barra de ações do catálogo (contagem + botão Filtros no mobile) */
+  .catalog-bar { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:16px; }
+  .result-count { font-size:12px; color:var(--muted); }
+  .filter-open-btn { display:inline-flex; align-items:center; gap:7px; background:var(--card); border:1px solid var(--border); color:var(--white); border-radius:9px; padding:9px 14px; font-size:13px; font-weight:600; cursor:pointer; font-family:'Inter',sans-serif; }
+  .filter-open-btn svg { width:15px; height:15px; }
+  .filter-open-btn .fcount { background:var(--gold); color:var(--black); border-radius:10px; font-size:10px; font-weight:700; padding:1px 6px; display:none; }
+  .filter-open-btn .fcount.on { display:inline-block; }
+
+  /* Conteúdo dos filtros (mesmo markup serve pra sidebar e pra gaveta) */
+  .filter-group { padding:16px 0; border-bottom:1px solid var(--border); }
+  .filter-group:last-child { border-bottom:none; }
+  .filter-legend { font-size:10px; letter-spacing:2px; text-transform:uppercase; color:var(--muted); margin-bottom:12px; }
+  .filter-opt { display:flex; align-items:center; gap:10px; padding:7px 0; cursor:pointer; font-size:13.5px; color:var(--white); }
+  .filter-opt input { appearance:none; width:17px; height:17px; border:1px solid var(--border); border-radius:5px; background:var(--card); cursor:pointer; flex-shrink:0; position:relative; transition:border-color 0.15s,background 0.15s; }
+  .filter-opt input:checked { background:var(--gold); border-color:var(--gold); }
+  .filter-opt input:checked::after { content:'✓'; position:absolute; inset:0; display:flex; align-items:center; justify-content:center; color:var(--black); font-size:11px; font-weight:800; }
+  .filter-opt .fo-count { margin-left:auto; font-size:11px; color:var(--muted); }
+  .price-value { font-size:13px; color:var(--gold); font-weight:700; margin-bottom:10px; }
+  .price-range { width:100%; appearance:none; height:4px; border-radius:2px; background:var(--border); outline:none; }
+  .price-range::-webkit-slider-thumb { appearance:none; width:18px; height:18px; border-radius:50%; background:var(--gold); cursor:pointer; border:none; }
+  .price-range::-moz-range-thumb { width:18px; height:18px; border-radius:50%; background:var(--gold); cursor:pointer; border:none; }
+  .price-limits { display:flex; justify-content:space-between; font-size:10.5px; color:var(--muted); margin-top:6px; }
+  .filter-clear { width:100%; background:none; border:1px solid var(--border); color:var(--muted); border-radius:9px; padding:11px; font-size:12.5px; cursor:pointer; font-family:'Inter',sans-serif; margin-top:16px; transition:border-color 0.15s,color 0.15s; }
+  .filter-clear:hover { border-color:var(--gold); color:var(--gold); }
+
+  /* Gaveta de filtros no mobile (sobe de baixo) */
+  .filters-sheet-overlay { position:fixed; inset:0; z-index:440; background:rgba(0,0,0,0.7); display:none; align-items:flex-end; }
+  .filters-sheet-overlay.open { display:flex; }
+  .filters-sheet { width:100%; max-height:82vh; background:var(--dark); border-top:1px solid var(--border); border-radius:20px 20px 0 0; display:flex; flex-direction:column; animation:slideUp 0.28s ease; }
+  .fs-header { display:flex; align-items:center; justify-content:space-between; padding:16px 20px; border-bottom:1px solid var(--border); }
+  .fs-title { font-family:'Playfair Display',serif; font-size:18px; font-weight:700; }
+  .fs-close { background:none; border:none; color:var(--muted); font-size:24px; cursor:pointer; line-height:1; }
+  .fs-body { overflow-y:auto; padding:4px 20px 16px; }
+  .fs-foot { padding:14px 20px 20px; border-top:1px solid var(--border); }
+
+  /* ── Página de produto (overlay) ── */
+  .product-overlay { position:fixed; inset:0; z-index:280; background:rgba(0,0,0,0.75); backdrop-filter:blur(4px); display:none; overflow-y:auto; }
+  .product-overlay.open { display:block; }
+  .product-page { min-height:100%; background:var(--black); }
+  .pp-topbar { position:sticky; top:0; z-index:2; display:flex; align-items:center; gap:12px; padding:13px 16px; background:rgba(10,10,10,0.94); backdrop-filter:blur(12px); border-bottom:1px solid var(--border); }
+  html.theme-light .pp-topbar { background:rgba(244,241,234,0.94); }
+  .pp-back { display:flex; align-items:center; gap:7px; background:none; border:none; color:var(--white); font-size:13.5px; cursor:pointer; font-family:'Inter',sans-serif; padding:0; }
+  .pp-back svg { width:18px; height:18px; }
+  .pp-body { padding:0 0 40px; }
+  .pp-hero { width:100%; aspect-ratio:1/0.82; display:flex; align-items:center; justify-content:center; font-size:96px; background:linear-gradient(135deg,#1a1a1a,#111); position:relative; }
+  html.theme-light .pp-hero { background:linear-gradient(135deg,#efeae0,#e5ddcf); }
+  .pp-hero .product-badge { top:14px; left:14px; }
+  .pp-content { padding:22px 20px 0; }
+  .pp-cat { font-size:10px; letter-spacing:2px; text-transform:uppercase; color:var(--gold); margin-bottom:7px; }
+  .pp-name { font-family:'Playfair Display',serif; font-size:26px; font-weight:700; line-height:1.2; margin-bottom:12px; }
+  .pp-rating { display:flex; align-items:center; gap:9px; flex-wrap:wrap; font-size:12.5px; color:var(--muted); margin-bottom:18px; }
+  .pp-stars { color:var(--gold); letter-spacing:1px; font-size:13px; }
+  .pp-price-row { display:flex; align-items:baseline; gap:11px; flex-wrap:wrap; margin-bottom:6px; }
+  .pp-price { font-family:'Playfair Display',serif; font-size:32px; font-weight:700; color:var(--gold); }
+  .pp-price-old { font-size:14px; color:var(--muted); text-decoration:line-through; }
+  .pp-off { background:var(--red); color:#fff; font-size:11px; font-weight:700; padding:3px 8px; border-radius:5px; }
+  .pp-installment { font-size:12.5px; color:var(--muted); margin-bottom:20px; }
+  .pp-note { display:flex; gap:9px; align-items:flex-start; border:1px solid var(--border); border-radius:11px; padding:12px 14px; font-size:12.5px; line-height:1.5; margin-bottom:14px; color:var(--white); }
+  .pp-note .ppn-icon { flex-shrink:0; font-size:15px; line-height:1.2; }
+  .pp-note.promo { border-color:rgba(201,168,76,0.45); background:rgba(201,168,76,0.07); }
+  .pp-note.stock { border-color:rgba(192,57,43,0.45); background:rgba(192,57,43,0.07); }
+  .test-tag { display:inline-block; margin-left:7px; font-size:9px; letter-spacing:1px; text-transform:uppercase; color:#e0a800; border:1px solid rgba(224,168,0,0.5); border-radius:20px; padding:1px 7px; vertical-align:middle; }
+  .pp-buy { width:100%; margin:8px 0 10px; padding:16px; font-size:15px; }
+  .pp-ask { width:100%; background:none; border:1px solid var(--border); color:var(--white); border-radius:8px; padding:14px; font-size:13.5px; font-weight:500; cursor:pointer; font-family:'Inter',sans-serif; display:flex; align-items:center; justify-content:center; gap:8px; transition:border-color 0.2s,color 0.2s; }
+  .pp-ask:hover { border-color:var(--gold); color:var(--gold); }
+  .pp-section { margin-top:32px; }
+  .pp-section-title { font-family:'Playfair Display',serif; font-size:18px; font-weight:700; margin-bottom:13px; }
+  .pp-desc { font-size:14px; line-height:1.7; color:var(--white); }
+  .pp-resolve { margin-top:13px; border-left:2px solid var(--gold); padding:3px 0 3px 14px; font-size:13.5px; line-height:1.65; color:var(--muted); }
+  .pp-specs { border:1px solid var(--border); border-radius:12px; overflow:hidden; }
+  .pp-spec { display:flex; justify-content:space-between; gap:16px; padding:12px 15px; font-size:13.5px; border-bottom:1px solid var(--border); }
+  .pp-spec:last-child { border-bottom:none; }
+  .pp-spec-k { color:var(--muted); }
+  .pp-spec-v { font-weight:600; text-align:right; }
+  .pp-combos { display:grid; grid-template-columns:repeat(2,1fr); gap:12px; }
+
+  @media (min-width:900px) {
+    .breadcrumbs { display:flex; }
+
+    /* Catálogo em duas colunas: filtros à esquerda, grade à direita */
+    .catalog-layout { display:grid; grid-template-columns:238px 1fr; gap:30px; align-items:start; max-width:1200px; margin:0 auto; }
+    .filters-panel { display:block; position:sticky; top:124px; background:var(--card); border:1px solid var(--border); border-radius:14px; padding:4px 18px 18px; }
+    .filter-open-btn { display:none; }
+    .catalog-layout .products-grid { grid-template-columns:repeat(3,1fr); max-width:none; margin:0; }
+    .catalog-bar { max-width:1200px; margin-left:auto; margin-right:auto; }
+
+    /* Página de produto vira um cartão centralizado */
+    .product-overlay { padding:0; }
+    .product-page { max-width:1080px; margin:0 auto; min-height:auto; border-left:1px solid var(--border); border-right:1px solid var(--border); }
+    .pp-body { display:grid; grid-template-columns:1fr 1fr; gap:0 44px; padding:0 40px 48px; align-items:start; }
+    .pp-hero { border-radius:16px; margin-top:32px; aspect-ratio:1; font-size:130px; position:sticky; top:96px; }
+    .pp-content { padding:32px 0 0; }
+    .pp-name { font-size:32px; }
+    .pp-details { grid-column:1 / -1; display:grid; grid-template-columns:1fr 1fr; gap:0 44px; align-items:start; }
+    .pp-combos { grid-template-columns:repeat(2,1fr); }
+    .pp-topbar { padding:15px 40px; }
+  }
+
+  @media (min-width:1300px) {
+    .catalog-layout .products-grid { grid-template-columns:repeat(4,1fr); }
+  }
 </style>
 </head>
 <body>
@@ -387,10 +504,21 @@
 
 <section id="produtos" style="padding-top:48px">
   <div class="section-header">
+    <div class="breadcrumbs" id="breadcrumbs"></div>
     <div class="section-eyebrow">Catálogo</div>
     <div class="section-title" id="sectionTitle">Todos os Produtos</div>
   </div>
-  <div class="products-grid" id="productsGrid"></div>
+  <div class="catalog-bar">
+    <div class="result-count" id="resultCount"></div>
+    <button class="filter-open-btn" onclick="openFilters()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="4" y1="6" x2="20" y2="6"/><line x1="7" y1="12" x2="17" y2="12"/><line x1="10" y1="18" x2="14" y2="18"/></svg>
+      Filtros <span class="fcount" id="filterCount">0</span>
+    </button>
+  </div>
+  <div class="catalog-layout">
+    <aside class="filters-panel" id="filtersPanel"></aside>
+    <div class="products-grid" id="productsGrid"></div>
+  </div>
 </section>
 
 <footer>
@@ -539,6 +667,32 @@
           <span class="toggle-knob"></span>
         </button>
       </div>
+    </div>
+  </div>
+</div>
+
+<div class="product-overlay" id="productOverlay" onclick="handleProductClick(event)">
+  <div class="product-page">
+    <div class="pp-topbar">
+      <button class="pp-back" onclick="closeProduct()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+        Voltar
+      </button>
+      <div class="breadcrumbs" id="ppBreadcrumbs" style="margin-bottom:0"></div>
+    </div>
+    <div class="pp-body" id="ppBody"></div>
+  </div>
+</div>
+
+<div class="filters-sheet-overlay" id="filtersSheet" onclick="handleFiltersSheetClick(event)">
+  <div class="filters-sheet">
+    <div class="fs-header">
+      <div class="fs-title">Filtros</div>
+      <button class="fs-close" onclick="closeFilters()">×</button>
+    </div>
+    <div class="fs-body" id="filtersSheetBody"></div>
+    <div class="fs-foot">
+      <button class="btn-primary" style="width:100%;text-align:center" onclick="closeFilters()">Ver <span id="fsCount">0</span> produtos</button>
     </div>
   </div>
 </div>
@@ -1327,7 +1481,7 @@ async function checkout() {
     cart = [];
     updateCartBadge();
     renderCart();
-    if (btn) { btn.textContent = 'Finalizar Compra'; btn.disabled = false; }
+    if (btn) { btn.textContent = 'Finaliza Compra'; btn.disabled = false; }
   }
 }
 
@@ -1373,7 +1527,7 @@ function handlePaymentReturn() {
       `Ih, seu pagamento não foi concluído. 😕 Sem problema — se quiser tentar de novo ou tiver alguma dúvida, é só me chamar!`, []), 400);
   }
 }
-
+  
 // ── M.I.S.S — moderação (Supabase é o ÚNICO dono do ban) ──
 // O nayra.js + Supabase decidem strikes e ban por IP. O front só mostra
 // o que o servidor mandar e trava a tela na sessão atual (memória, não
@@ -1502,33 +1656,38 @@ function sendSuggestion(btn) {
 // ═══════════════════════════════════════════════════════════
 function renderProducts(list) {
   const grid = document.getElementById('productsGrid');
-  if (!list.length) { grid.innerHTML = '<p style="color:var(--muted);font-size:13px;grid-column:span 2;text-align:center;padding:40px 0">Nenhum produto encontrado.</p>'; return; }
+  if (!list.length) { grid.innerHTML = '<p style="color:var(--muted);font-size:13px;grid-column:1/-1;text-align:center;padding:40px 0">Nenhum produto encontrado.</p>'; return; }
   grid.innerHTML = list.map(p => `
-    <div class="product-card">
+    <div class="product-card" onclick="openProduct(${p.id})">
       <div class="product-img"><span>${p.emoji}</span>${p.badge ? `<span class="product-badge ${p.badge==='new'?'new':p.badge==='hot'?'hot':''}">${p.badge==='new'?'Novo':p.badge==='hot'?'🔥 Hot':'Oferta'}</span>` : ''}</div>
       <div class="product-info">
         <div class="product-category">${p.category}</div>
         <div class="product-name">${p.name}</div>
         <div class="product-footer">
           <div>${p.oldPrice ? `<div class="product-price-old">R$ ${p.oldPrice.toFixed(2).replace('.',',')}</div>` : ''}<div class="product-price">R$ ${p.price.toFixed(2).replace('.',',')}</div></div>
-          <button class="add-btn" onclick="addToCart(${p.id})">+</button>
+          <button class="add-btn" onclick="event.stopPropagation();addToCart(${p.id})">+</button>
         </div>
       </div>
     </div>`).join('');
 }
 
+// Passada 2: estas duas agora alimentam o ESTADO da vitrine (view) em vez de
+// mandar listas próprias pra tela. É o que faz filtro, busca e categoria se
+// combinarem em vez de um apagar o outro.
 function filterByCategory(cat) {
-  document.getElementById('sectionTitle').textContent = cat;
-  document.getElementById('produtos').scrollIntoView({behavior:'smooth'});
-  renderProducts(products.filter(p => p.category === cat));
+  view.cats = new Set([cat]);
+  applyView({ scroll: true });
 }
 
 function filterProducts(query) {
-  const q = query.trim();
-  document.getElementById('sectionTitle').textContent = q ? `Resultados: "${q}"` : 'Todos os Produtos';
-  if (!q) { renderProducts(products); return; }
-  const results = Nayra.search(q);
-  renderProducts(results);
+  const q = String(query || '').trim();
+  view.search = q;
+  // mantém as duas caixas de busca (desktop e mobile) mostrando a mesma coisa
+  const a = document.getElementById('searchInput');
+  const b = document.getElementById('msearchInput');
+  if (a && a.value !== query) a.value = query;
+  if (b && b.value !== query) b.value = query;
+  applyView();
 }
 
 function addToCart(id) {
@@ -1568,14 +1727,15 @@ function showToast(msg) {
   setTimeout(() => t.classList.remove('show'), 2200);
 }
 
-renderProducts(products);
+// A primeira renderização do catálogo agora é feita pelo applyView(), no fim
+// do bloco da Passada 2 — que é quem conhece filtros, busca e categoria.
 
 // Se o cliente está voltando do Mercado Pago (?pagamento=...), trata aqui.
 handlePaymentReturn();
 
 // Balão proativo: a Nayra puxa assunto depois de um tempo navegando (uma vez por visita)
 setTimeout(showNayraTeaser, 11000);
-
+  
 // ═══════════════════════════════════════════════════════════
 //  NAVEGAÇÃO — PASSADA 1  (dois trajes + navegação)
 //  Agora no MESMO script do cérebro (fundido), pra não depender
@@ -1599,16 +1759,14 @@ function closeMobileSearch() { document.getElementById('msearch').classList.remo
 // Início: volta ao topo (e fecha o menu, se aberto)
 function goHome() { window.scrollTo({ top: 0, behavior: 'smooth' }); closeMenu(); }
 
-// Navega por categoria — reaproveita as funções que já existem no cérebro
+// Navega por categoria — agora através do estado da vitrine
 function navCategory(cat) {
   if (cat === 'all') {
-    document.getElementById('sectionTitle').textContent = 'Todos os Produtos';
-    renderProducts(products);
-    document.getElementById('produtos').scrollIntoView({ behavior: 'smooth' });
+    view.cats.clear();
+    applyView({ scroll: true });
   } else {
-    filterByCategory(cat);   // já existe no cérebro: filtra + rola até os produtos
+    filterByCategory(cat);
   }
-  setActiveCatLink(cat);
   closeMenu();
 }
 
@@ -1673,6 +1831,295 @@ function toggleNayraBall() { applyNayraBall(!nayraBallOn); nesPrefs.nayraBall = 
 // Aplica as preferências salvas assim que o site abre
 setTheme(nesPrefs.theme === 'light' ? 'light' : 'dark');
 applyNayraBall(nesPrefs.nayraBall === false ? false : true);
+
+// ═══════════════════════════════════════════════════════════
+//  PASSADA 2 — filtros, página de produto e breadcrumbs
+// ═══════════════════════════════════════════════════════════
+
+// ⚠️ CÓDIGO DE HONRA — LEIA ANTES DE IR AO AR
+// Os campos estoque / avaliacao / vendas / promo do catálogo ainda são
+// FICTÍCIOS (veja o aviso no topo do arquivo). Até a Passada 1 eles só eram
+// lidos pela Nayra; a partir daqui eles aparecem PARA O CLIENTE na página de
+// produto — ou seja, escassez e prova social viram promessa pública.
+// Enquanto esta chave estiver true, esses blocos saem marcados como
+// "dado de teste", pra nunca passarem por verdade sem querer.
+// Vire para false SOMENTE quando os dados vierem do estoque real.
+const DADOS_DE_TESTE = true;
+
+// ── Estado único da vitrine ──────────────────────────────────
+// Categoria, busca, preço e avaliação vivem juntos aqui. Toda a navegação
+// (menu, barra de categorias, busca, filtros) escreve neste objeto e chama
+// applyView(). Assim os critérios se somam em vez de se atropelarem.
+const PRICE_MAX = Math.ceil(Math.max.apply(null, products.map(p => p.price)) / 50) * 50;
+const view = { cats: new Set(), search: '', maxPrice: PRICE_MAX, minRating: 0 };
+
+// ── Leitura dos dados de avaliação (hoje guardados como texto) ──
+function ratingOf(p) {
+  const m = String(p.avaliacao || '').match(/([\d,.]+)\s*de\s*5/);
+  return m ? parseFloat(m[1].replace(',', '.')) : 0;
+}
+function reviewsOf(p) {
+  const m = String(p.avaliacao || '').match(/\(([\d.]+)\s*avalia/);
+  return m ? parseInt(m[1].replace(/\./g, ''), 10) : 0;
+}
+function starsOf(r) {
+  const n = Math.round(r);
+  return '★'.repeat(n) + '☆'.repeat(Math.max(0, 5 - n));
+}
+function brl(v) { return Nayra.brl(v); }
+function brlSimple(v) { return 'R$ ' + Math.round(v).toLocaleString('pt-BR'); }
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, function (c) {
+    return { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c];
+  });
+}
+
+// ── Monta a lista visível a partir do estado ──
+function computeList() {
+  let list = view.search ? Nayra.search(view.search) : products.slice();
+  if (view.cats.size) list = list.filter(p => view.cats.has(p.category));
+  list = list.filter(p => p.price <= view.maxPrice);
+  if (view.minRating) list = list.filter(p => ratingOf(p) >= view.minRating);
+  return list;
+}
+
+function activeFilterCount() {
+  let n = view.cats.size;
+  if (view.maxPrice < PRICE_MAX) n++;
+  if (view.minRating > 0) n++;
+  return n;
+}
+
+// ── Ponto único que atualiza a vitrine inteira ──
+function applyView(opts) {
+  opts = opts || {};
+  const list = computeList();
+  renderProducts(list);
+
+  let title = 'Todos os Produtos';
+  if (view.search) title = 'Resultados: "' + view.search + '"';
+  else if (view.cats.size === 1) title = Array.from(view.cats)[0];
+  else if (view.cats.size > 1) title = 'Categorias selecionadas';
+  const st = document.getElementById('sectionTitle');
+  if (st) st.textContent = title;
+
+  const rc = document.getElementById('resultCount');
+  if (rc) rc.textContent = list.length === 1 ? '1 produto' : list.length + ' produtos';
+  const fsc = document.getElementById('fsCount');
+  if (fsc) fsc.textContent = list.length;
+
+  const n = activeFilterCount();
+  const fc = document.getElementById('filterCount');
+  if (fc) { fc.textContent = n; fc.classList.toggle('on', n > 0); }
+
+  if (!opts.keepPanels) renderFilterPanels();
+  renderBreadcrumbs();
+  setActiveCatLink(view.cats.size === 1 ? Array.from(view.cats)[0] : 'all');
+
+  if (opts.scroll) {
+    const alvo = document.getElementById('produtos');
+    if (alvo) alvo.scrollIntoView({ behavior: 'smooth' });
+  }
+}
+
+// ── Filtros ──────────────────────────────────────────────────
+function filtersHtml() {
+  const cats = Array.from(new Set(products.map(p => p.category)));
+  const catOpts = cats.map(function (c) {
+    const qtd = products.filter(p => p.category === c).length;
+    const on = view.cats.has(c) ? 'checked' : '';
+    return '<label class="filter-opt"><input type="checkbox" ' + on +
+           ' onchange="toggleCatFilter(\'' + c + '\')"/> ' + c +
+           ' <span class="fo-count">' + qtd + '</span></label>';
+  }).join('');
+
+  const ratingOpts = [4.5, 4, 3.5].map(function (r) {
+    const on = view.minRating === r ? 'checked' : '';
+    return '<label class="filter-opt"><input type="checkbox" ' + on +
+           ' onchange="setRatingFilter(' + r + ')"/> <span class="pp-stars">' + starsOf(r) +
+           '</span> ' + String(r).replace('.', ',') + ' ou mais</label>';
+  }).join('');
+
+  return '' +
+    '<div class="filter-group"><div class="filter-legend">Categoria</div>' + catOpts + '</div>' +
+    '<div class="filter-group"><div class="filter-legend">Preço</div>' +
+      '<div class="price-value">Até ' + brlSimple(view.maxPrice) + '</div>' +
+      '<input class="price-range" type="range" min="50" max="' + PRICE_MAX + '" step="10" value="' + view.maxPrice + '" oninput="onPriceInput(this.value)"/>' +
+      '<div class="price-limits"><span>R$ 50</span><span>' + brlSimple(PRICE_MAX) + '</span></div>' +
+    '</div>' +
+    '<div class="filter-group"><div class="filter-legend">Avaliação</div>' + ratingOpts + '</div>' +
+    '<button class="filter-clear" onclick="clearFilters()">Limpar filtros</button>';
+}
+
+function renderFilterPanels() {
+  const html = filtersHtml();
+  const painel = document.getElementById('filtersPanel');
+  const gaveta = document.getElementById('filtersSheetBody');
+  if (painel) painel.innerHTML = html;
+  if (gaveta) gaveta.innerHTML = html;
+}
+
+function toggleCatFilter(c) {
+  if (view.cats.has(c)) view.cats.delete(c); else view.cats.add(c);
+  applyView();
+}
+function setRatingFilter(r) {
+  view.minRating = (view.minRating === r) ? 0 : r;
+  applyView();
+}
+// No preço não reconstruímos os painéis: isso derrubaria o dedo do cliente
+// no meio do arrasto do slider.
+function onPriceInput(val) {
+  view.maxPrice = Number(val);
+  const txt = 'Até ' + brlSimple(view.maxPrice);
+  document.querySelectorAll('.price-value').forEach(el => { el.textContent = txt; });
+  applyView({ keepPanels: true });
+}
+function clearFilters() {
+  view.cats.clear();
+  view.maxPrice = PRICE_MAX;
+  view.minRating = 0;
+  applyView();
+}
+
+function openFilters()  { document.getElementById('filtersSheet').classList.add('open'); }
+function closeFilters() { document.getElementById('filtersSheet').classList.remove('open'); }
+function handleFiltersSheetClick(e) { if (e.target === e.currentTarget) closeFilters(); }
+
+// ── Breadcrumbs (aparecem só no desktop, por CSS) ──
+function renderBreadcrumbs() {
+  const el = document.getElementById('breadcrumbs');
+  if (!el) return;
+  let atual = 'Todos os produtos';
+  if (view.search) atual = 'Busca: "' + escapeHtml(view.search) + '"';
+  else if (view.cats.size === 1) atual = Array.from(view.cats)[0];
+  else if (view.cats.size > 1) atual = 'Categorias selecionadas';
+  el.innerHTML = '<button onclick="goHome()">Início</button>' +
+                 '<span class="bc-sep">›</span><span class="bc-current">' + atual + '</span>';
+}
+
+// ── Página de produto ────────────────────────────────────────
+function comboCardHtml(c) {
+  return '<div class="product-card-mini" onclick="openProduct(' + c.id + ')">' +
+    '<div class="product-card-mini-emoji">' + c.emoji + '</div>' +
+    '<div class="product-card-mini-info">' +
+      '<div class="product-card-mini-name">' + c.name + '</div>' +
+      '<div class="product-card-mini-price">' + brl(c.price) + '</div>' +
+    '</div>' +
+    '<button class="add-mini-btn" onclick="event.stopPropagation();addToCart(' + c.id + ')">+</button>' +
+  '</div>';
+}
+
+function productPageHtml(p) {
+  const r = ratingOf(p), rev = reviewsOf(p);
+  const off = p.oldPrice ? Math.round((1 - p.price / p.oldPrice) * 100) : 0;
+  const badge = p.badge
+    ? '<span class="product-badge ' + (p.badge === 'new' ? 'new' : p.badge === 'hot' ? 'hot' : '') + '">' +
+      (p.badge === 'new' ? 'Novo' : p.badge === 'hot' ? '🔥 Hot' : 'Oferta') + '</span>'
+    : '';
+  const tag = DADOS_DE_TESTE ? '<span class="test-tag">dado de teste</span>' : '';
+
+  const ratingRow = r
+    ? '<div class="pp-rating"><span class="pp-stars">' + starsOf(r) + '</span> ' +
+      String(r).replace('.', ',') + ' · ' + rev + ' avaliações' +
+      (p.vendas ? ' · ' + p.vendas : '') + tag + '</div>'
+    : '';
+
+  const promo = (p.promo && p.promo.termina_em)
+    ? '<div class="pp-note promo"><span class="ppn-icon">⏳</span><div>Este preço vale até <strong>' +
+      p.promo.termina_em + '</strong> — ' + p.promo.motivo + '.' + tag + '</div></div>'
+    : '';
+
+  // Escassez só aparece quando é de fato baixa. Estoque alto não vira urgência.
+  const stock = (typeof p.estoque === 'number' && p.estoque <= 10)
+    ? '<div class="pp-note stock"><span class="ppn-icon">📦</span><div>Restam <strong>' +
+      p.estoque + ' unidades</strong> em estoque.' + tag + '</div></div>'
+    : '';
+
+  const specs = Object.entries(p.specs).map(function (par) {
+    return '<div class="pp-spec"><span class="pp-spec-k">' + par[0] +
+           '</span><span class="pp-spec-v">' + par[1] + '</span></div>';
+  }).join('');
+
+  const combos = (p.combos || []).map(id => products.find(x => x.id === id)).filter(Boolean);
+  const combosHtml = combos.length
+    ? '<div class="pp-section" style="grid-column:1/-1"><div class="pp-section-title">Combina com</div>' +
+      '<div class="pp-combos">' + combos.map(comboCardHtml).join('') + '</div></div>'
+    : '';
+
+  return '' +
+    '<div class="pp-hero">' + p.emoji + badge + '</div>' +
+    '<div class="pp-content">' +
+      '<div class="pp-cat">' + p.category + '</div>' +
+      '<div class="pp-name">' + p.name + '</div>' +
+      ratingRow +
+      '<div class="pp-price-row"><span class="pp-price">' + brl(p.price) + '</span>' +
+        (p.oldPrice ? '<span class="pp-price-old">' + brl(p.oldPrice) + '</span><span class="pp-off">-' + off + '%</span>' : '') +
+      '</div>' +
+      '<div class="pp-installment">ou 12x de ' + brl(p.price / 12) + ' sem juros</div>' +
+      promo + stock +
+      '<button class="btn-primary pp-buy" onclick="addToCart(' + p.id + ')">Adicionar ao Carrinho</button>' +
+      '<button class="pp-ask" onclick="askNayraAbout(' + p.id + ')">✨ Perguntar à Nayra sobre este produto</button>' +
+    '</div>' +
+    '<div class="pp-details">' +
+      '<div class="pp-section"><div class="pp-section-title">Sobre o produto</div>' +
+        '<div class="pp-desc">' + p.desc + '</div>' +
+        (p.resolve ? '<div class="pp-resolve"><strong>Feito para quem enfrenta:</strong> ' + p.resolve + '.</div>' : '') +
+      '</div>' +
+      '<div class="pp-section"><div class="pp-section-title">Ficha técnica</div>' +
+        '<div class="pp-specs">' + specs + '</div>' +
+      '</div>' +
+      combosHtml +
+    '</div>';
+}
+
+function openProduct(id) {
+  const p = products.find(x => x.id === id);
+  if (!p) return;
+  document.getElementById('ppBody').innerHTML = productPageHtml(p);
+  const bc = document.getElementById('ppBreadcrumbs');
+  if (bc) {
+    bc.innerHTML = '<button onclick="closeProduct();goHome()">Início</button>' +
+      '<span class="bc-sep">›</span>' +
+      '<button onclick="closeProduct();navCategory(\'' + p.category + '\')">' + p.category + '</button>' +
+      '<span class="bc-sep">›</span><span class="bc-current">' + p.name + '</span>';
+  }
+  const ov = document.getElementById('productOverlay');
+  ov.classList.add('open');
+  ov.scrollTop = 0;
+  document.body.style.overflow = 'hidden';   // trava o fundo enquanto lê o produto
+  // deixa a Nayra ciente do que o cliente está olhando
+  try { Nayra.remember([p], 'tell_about', p.category); } catch (e) {}
+}
+function closeProduct() {
+  document.getElementById('productOverlay').classList.remove('open');
+  document.body.style.overflow = '';
+}
+function handleProductClick(e) { if (e.target === e.currentTarget) closeProduct(); }
+
+// Leva a dúvida do cliente direto pra Nayra, já com o produto no contexto
+function askNayraAbout(id) {
+  const p = products.find(x => x.id === id);
+  if (!p) return;
+  closeProduct();
+  openNayra();
+  const input = document.getElementById('chatInput');
+  if (input && !input.disabled) {
+    input.value = 'Me fala sobre o ' + p.name;
+    setTimeout(sendMessage, 700);   // deixa a saudação da Nayra aparecer antes
+  }
+}
+
+// Fecha o que estiver aberto com a tecla Esc (desktop)
+document.addEventListener('keydown', function (e) {
+  if (e.key !== 'Escape') return;
+  if (document.getElementById('productOverlay').classList.contains('open')) closeProduct();
+  else if (document.getElementById('filtersSheet').classList.contains('open')) closeFilters();
+  else if (document.getElementById('settingsOverlay').classList.contains('open')) closeSettings();
+});
+
+// Primeira pintura do catálogo (agora com filtros no ar)
+applyView();
 </script>
 </body>
 </html>
