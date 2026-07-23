@@ -183,7 +183,7 @@
   .nav-hamburger { display:flex; align-items:center; justify-content:center; background:none; border:none; color:var(--white); cursor:pointer; padding:4px; }
   .nav-hamburger svg { width:24px; height:24px; }
   .nav-logo { flex:1; text-align:center; }
-  .nav .nav-search { display:none; }          /* mobile: busca sai do header */
+  nav .nav-search { display:none; }          /* mobile: busca sai do header */
   .nav-search-icon { display:flex; align-items:center; justify-content:center; background:none; border:none; color:var(--white); cursor:pointer; padding:4px; }
   .nav-search-icon svg { width:20px; height:20px; }
   .cat-bar { display:none; }                  /* mobile: barra de categorias escondida */
@@ -238,7 +238,7 @@
     nav { padding:0 40px; }
     .nav-hamburger { display:none; }
     .nav-search-icon { display:none; }
-    .nav .nav-search { display:flex; }
+    nav .nav-search { display:flex; }
     .nav-logo { flex:none; text-align:left; }
 
     .cat-bar { display:block; position:fixed; top:60px; left:0; right:0; z-index:99; background:rgba(17,17,17,0.96); backdrop-filter:blur(12px); border-bottom:1px solid var(--border); }
@@ -450,13 +450,25 @@
   .nav-word .w2 { display:block; font-family:'Playfair Display',serif; font-size:14px; font-weight:700; letter-spacing:4px; color:var(--white); }
 
   /* ── Hero: a própria marca vira textura de circuito no fundo ── */
-  .hero::after {
-    content:''; position:absolute; top:46%; right:-16%;
-    width:min(540px,78vw); aspect-ratio:1.31; transform:translateY(-50%);
+  .welcome::after {
+    content:''; position:absolute; top:50%; right:-22%;
+    width:min(380px,62vw); aspect-ratio:1.31; transform:translateY(-50%);
     background:url('logo-nes-completa.png') center/contain no-repeat;
-    opacity:0.06; pointer-events:none;
+    opacity:0.055; pointer-events:none;
   }
-  html.theme-light .hero::after { opacity:0.12; }
+  html.theme-light .welcome::after { opacity:0.11; }
+
+  /* ── Faixa de boas-vindas (no lugar do hero de tela cheia) ── */
+  .welcome { position:relative; overflow:hidden; padding:82px 24px 24px; }
+  .welcome .hero-badge { margin-bottom:16px; }
+  .welcome-title { font-family:'Playfair Display',serif; font-size:clamp(23px,5.6vw,36px); font-weight:900; line-height:1.16; margin-bottom:9px; }
+  .welcome-title em { color:var(--gold); font-style:normal; }
+  .welcome-sub { font-size:13.5px; color:var(--muted); line-height:1.6; max-width:540px; }
+  .welcome .trust-row { margin-top:24px; padding-top:20px; }
+
+  /* Números agora vivem no rodapé: informam sem atrasar a compra */
+  footer .hero-stats { justify-content:center; border-top:none; margin-top:24px; padding-top:0; gap:20px 30px; }
+  footer .hero-stats .stat-value { font-size:22px; }
 
   /* ── Fileira de confiança (tudo verdade, nada de número inventado) ── */
   .trust-row { display:flex; flex-wrap:wrap; gap:4px 0; width:100%; margin-top:44px; padding-top:26px; border-top:1px solid var(--border); }
@@ -499,6 +511,24 @@
   .cat-moda        { background:linear-gradient(150deg,#2a1d24,#131013); }
   .cat-brinquedos  { background:linear-gradient(150deg,#17282a,#0d1414); }
 
+  /* Marca d'água enquanto não há foto. Fica ATRÁS da camada de imagem:
+     no dia em que você definir --cat-img, a foto cobre e ela some sozinha. */
+  .cat-glyph { position:absolute; top:13%; left:50%; transform:translateX(-50%); font-size:58px; opacity:0.16; z-index:0; pointer-events:none; user-select:none; }
+  .cat-card::before { z-index:1; }
+  .cat-veil { z-index:2; }
+  .cat-body { z-index:3; }
+
+  /* No celular o topo respira menos: o hero não precisa empurrar a
+     fileira de confiança pra fora da primeira tela. (Trancado no mobile
+     pra não sobrescrever o traje de desktop, que vem antes no arquivo.) */
+  @media (max-width:899px) {
+    .hero { min-height:auto; padding:92px 24px 44px; }
+    .hero-btns { gap:10px; }
+    .hero-btns button { flex:1 1 100%; }
+    .trust-row { margin-top:34px; padding-top:22px; }
+    .cat-card { aspect-ratio:0.92; }
+  }
+
   /* ── Banner de oferta (a % é calculada do catálogo real) ── */
   .offer { position:relative; overflow:hidden; margin-top:28px; border:1px solid rgba(201,168,76,0.3); border-radius:16px; padding:22px; background:linear-gradient(105deg, rgba(201,168,76,0.16), rgba(201,168,76,0.03) 62%); display:flex; flex-direction:column; gap:16px; }
   .offer-label { display:inline-flex; align-items:center; gap:7px; font-size:11px; font-weight:600; letter-spacing:1.5px; text-transform:uppercase; color:var(--gold); }
@@ -510,6 +540,7 @@
 
   @media (min-width:900px) {
     .nav-brand { flex:none; }
+    .welcome { max-width:1200px; margin:0 auto; padding:132px 40px 30px; }
     .nav-mark { width:44px; height:44px; }
     .nav-word .w1 { font-size:17px; }
     .nav-word .w2 { font-size:15px; }
@@ -564,15 +595,15 @@
   </div>
 </div>
 
-<div class="hero">
+<!-- Faixa de boas-vindas — substituiu o hero de tela cheia.
+     Motivo: no celular o hero empurrava o primeiro produto pra segunda/terceira
+     rolagem. Aqui a marca é dita em uma linha e a confiança vem logo, sem
+     atrasar o catálogo. A frase continua sendo o <h1> da página (vale pro Google). -->
+<div class="welcome">
   <div class="hero-badge">✦ Marketplace Premium</div>
-  <h1>Tudo que Você<br/><em>Precisa,</em><br/>em Um Só Lugar</h1>
-  <p>De eletrônicos a moda, de casa a brinquedos. Encontre os melhores produtos com preços justos e entrega rápida.</p>
-  <div class="hero-btns">
-    <button class="btn-primary" onclick="document.getElementById('produtos').scrollIntoView()">Explorar Produtos →</button>
-    <button class="btn-outline" onclick="document.getElementById('categorias').scrollIntoView()">Ver Categorias</button>
-  </div>
-  <div class="trust-row">
+  <h1 class="welcome-title">Tudo que você precisa, <em>em um só lugar</em></h1>
+  <p class="welcome-sub">De eletrônicos a casa, de moda a brinquedos — com preço justo e entrega para todo o Brasil.</p>
+<div class="trust-row">
     <div class="trust-item">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="1" y="3" width="15" height="13" rx="2"/><path d="M16 8h4l3 3v5h-7z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
       <div><div class="trust-title">Entrega para todo o Brasil</div><div class="trust-sub">Rastreio em cada pedido</div></div>
@@ -585,14 +616,6 @@
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 18v-6a9 9 0 0 1 18 0v6"/><path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"/></svg>
       <div><div class="trust-title">Atendimento com a Nayra</div><div class="trust-sub">Disponível a qualquer hora</div></div>
     </div>
-  </div>
-  <!-- Números: preenchidos pelo próprio catálogo. Sobem sozinhos quando você
-       cadastra produto — nunca precisam ser "atualizados na mão" (nem inventados). -->
-  <div class="hero-stats">
-    <div><div class="stat-value" id="statProdutos">—</div><div class="stat-label">Produtos</div></div>
-    <div><div class="stat-value" id="statCategorias">—</div><div class="stat-label">Categorias</div></div>
-    <div id="statVisitantesBox" style="display:none"><div class="stat-value" id="statVisitantes">—</div><div class="stat-label">Visitantes (30 dias)</div></div>
-    <div><div class="stat-value">7 dias</div><div class="stat-label">Prazo de troca</div></div>
   </div>
 </div>
 
@@ -608,7 +631,7 @@
        style="--cat-img:url('cat-eletronicos.jpg')". Sem foto, vale o gradiente. -->
   <div class="cat-grid">
     <div class="cat-card cat-eletronicos" onclick="filterByCategory('Eletrônicos')">
-      <div class="cat-veil"></div>
+      <div class="cat-glyph">📱</div><div class="cat-veil"></div>
       <div class="cat-body">
         <div class="cat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="10" y1="18" x2="14" y2="18"/></svg></div>
         <div class="cat-name">Eletrônicos</div>
@@ -617,7 +640,7 @@
       </div>
     </div>
     <div class="cat-card cat-casa" onclick="filterByCategory('Casa')">
-      <div class="cat-veil"></div>
+      <div class="cat-glyph">🛋️</div><div class="cat-veil"></div>
       <div class="cat-body">
         <div class="cat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M3 10l9-7 9 7v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 13 15 13 15 22"/></svg></div>
         <div class="cat-name">Casa &amp; Decoração</div>
@@ -626,18 +649,18 @@
       </div>
     </div>
     <div class="cat-card cat-moda" onclick="filterByCategory('Moda')">
-      <div class="cat-veil"></div>
+      <div class="cat-glyph">👗</div><div class="cat-veil"></div>
       <div class="cat-body">
-        <div class="cat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M12 3a2 2 0 0 0 0 4M12 7l8 5-2 3-2-1v7H8v-7l-2 1-2-3z"/></svg></div>
+        <div class="cat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"><path d="M8 3L4 6l2 3 2-1v13h8V8l2 1 2-3-4-3a4 4 0 0 1-8 0z"/></svg></div>
         <div class="cat-name">Moda</div>
         <div class="cat-sub">Estilo para você</div>
         <div class="cat-count" data-cat-count="Moda"></div>
       </div>
     </div>
     <div class="cat-card cat-brinquedos" onclick="filterByCategory('Brinquedos')">
-      <div class="cat-veil"></div>
+      <div class="cat-glyph">🧸</div><div class="cat-veil"></div>
       <div class="cat-body">
-        <div class="cat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="8.5" cy="7" r="3"/><circle cx="15.5" cy="7" r="3"/><path d="M5 21v-4a7 7 0 0 1 14 0v4z"/></svg></div>
+        <div class="cat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="7" cy="6.5" r="2.6"/><circle cx="17" cy="6.5" r="2.6"/><circle cx="12" cy="14" r="6.4"/><circle cx="9.8" cy="12.5" r="0.7" fill="currentColor" stroke="none"/><circle cx="14.2" cy="12.5" r="0.7" fill="currentColor" stroke="none"/></svg></div>
         <div class="cat-name">Brinquedos</div>
         <div class="cat-sub">Diversão garantida</div>
         <div class="cat-count" data-cat-count="Brinquedos"></div>
@@ -681,6 +704,11 @@
   <img src="logo-nes.png" alt="" style="width:52px;height:52px;object-fit:contain;margin-bottom:10px"/>
   <div class="footer-logo">N.E.S<span> Shop</span></div>
   <div class="footer-tagline">Sua experiência de compra inteligente</div>
+  <div class="hero-stats">
+      <div><div class="stat-value" id="statProdutos">—</div><div class="stat-label">Produtos</div></div>
+      <div><div class="stat-value" id="statCategorias">—</div><div class="stat-label">Categorias</div></div>
+      <div id="statVisitantesBox" style="display:none"><div class="stat-value" id="statVisitantes">—</div><div class="stat-label">Visitantes (30 dias)</div></div>
+      <div><div class="stat-value">7 dias</div><div class="stat-label">Prazo de troca</div></div></div>
   <div class="footer-links">
     <a href="#">Sobre nós</a><a href="#">Privacidade</a><a href="#">Termos</a><a href="#">Contato</a><a href="#">Entregas</a>
   </div>
