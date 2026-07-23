@@ -500,14 +500,12 @@
 
   /* Área da foto (ou do gradiente, enquanto não houver foto) */
   .cat-photo { position:relative; aspect-ratio:1.12; overflow:hidden; }
-  .cat-photo::before {
-    content:''; position:absolute; inset:0; z-index:1;
-    background-image:var(--cat-img,none); background-size:cover; background-position:center;
-    transition:transform 0.4s ease;
-  }
-  .cat-card:hover .cat-photo::before { transform:scale(1.06); }
-  .cat-veil { position:absolute; inset:0; z-index:2; background:linear-gradient(to top, rgba(0,0,0,0.72), rgba(0,0,0,0.04)); }
-  .cat-glyph { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); font-size:52px; opacity:0.2; z-index:0; pointer-events:none; user-select:none; }
+  .cat-img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; z-index:1; transition:transform 0.5s ease; }
+  .cat-card:hover .cat-img { transform:scale(1.06); }
+  /* véu leve: o texto agora vive fora da foto, então ele só precisa
+     assentar a imagem no card — não escurecer tudo */
+  .cat-veil { position:absolute; inset:0; z-index:2; background:linear-gradient(to top, rgba(0,0,0,0.5), transparent 58%); }
+  .cat-glyph { position:absolute; top:46%; left:50%; transform:translate(-50%,-50%); font-size:60px; opacity:0.42; z-index:0; pointer-events:none; user-select:none; }
 
   /* Painel de informação, agora fora da foto — texto legível nos dois temas */
   .cat-info { position:relative; padding:0 13px 13px; }
@@ -671,6 +669,14 @@
   .pp-thumb { width:56px; height:56px; padding:0; border:1px solid var(--border); border-radius:9px; overflow:hidden; background:var(--card); cursor:pointer; transition:border-color 0.2s; }
   .pp-thumb.on, .pp-thumb:hover { border-color:var(--gold); }
   .pp-thumb img { width:100%; height:100%; object-fit:cover; display:block; }
+
+  /* ── Marca certa para cada tema ──
+     Dourada no escuro, preta no claro. A troca é por CSS, então acontece
+     junto com o tema, sem piscar e sem depender de JavaScript. */
+  .mark-clara { display:none; }
+  html.theme-light .mark-escura { display:none; }
+  html.theme-light .mark-clara  { display:block; }
+  html.theme-light .welcome::after { background-image:url('logo-nes-claro.png'); }
 </style>
 </head>
 <body>
@@ -680,7 +686,7 @@
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
   </button>
   <div class="nav-brand" onclick="goHome()" style="cursor:pointer">
-    <img class="nav-mark" src="logo-nes.png" alt="N.E.S Shop"/>
+    <img class="nav-mark mark-escura" src="logo-nes.png" alt="N.E.S Shop"/><img class="nav-mark mark-clara" src="logo-nes-claro.png" alt="N.E.S Shop"/>
     <div class="nav-word"><span class="w1">N.E.S</span><span class="w2">Shop</span></div>
   </div>
   <div class="nav-search-wrap">
@@ -746,12 +752,15 @@
     </div>
     <button class="section-link" onclick="navCategory('all')">Ver todas →</button>
   </div>
-  <!-- Para colocar fotos: suba os arquivos no repositório e acrescente ao card
-       style="--cat-img:url('cat-eletronicos.jpg')". Sem foto, vale o gradiente. -->
+  <!-- FOTOS DAS CATEGORIAS — não precisa mexer no código.
+       Basta subir no repositório, ao lado do index.html, arquivos com estes nomes:
+         cat-eletronicos.jpg · cat-casa.jpg · cat-moda.jpg · cat-brinquedos.jpg
+       Enquanto o arquivo não existir, a <img> se apaga sozinha e vale o gradiente
+       com o emoji. Quadradas, ~800px, abaixo de 200 KB. -->
   <div class="cat-grid">
     <div class="cat-card cat-eletronicos" onclick="filterByCategory('Eletrônicos')">
       <div class="cat-photo">
-        <div class="cat-glyph">📱</div><div class="cat-veil"></div>
+        <img class="cat-img" src="cat-eletronicos.jpg" alt="" loading="lazy" onerror="this.remove()"/><div class="cat-glyph">📱</div><div class="cat-veil"></div>
       </div>
       <div class="cat-info">
         <div class="cat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="10" y1="18" x2="14" y2="18"/></svg></div>
@@ -762,7 +771,7 @@
     </div>
     <div class="cat-card cat-casa" onclick="filterByCategory('Casa')">
       <div class="cat-photo">
-        <div class="cat-glyph">🛋️</div><div class="cat-veil"></div>
+        <img class="cat-img" src="cat-casa.jpg" alt="" loading="lazy" onerror="this.remove()"/><div class="cat-glyph">🛋️</div><div class="cat-veil"></div>
       </div>
       <div class="cat-info">
         <div class="cat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M3 10l9-7 9 7v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 13 15 13 15 22"/></svg></div>
@@ -773,7 +782,7 @@
     </div>
     <div class="cat-card cat-moda" onclick="filterByCategory('Moda')">
       <div class="cat-photo">
-        <div class="cat-glyph">👗</div><div class="cat-veil"></div>
+        <img class="cat-img" src="cat-moda.jpg" alt="" loading="lazy" onerror="this.remove()"/><div class="cat-glyph">👗</div><div class="cat-veil"></div>
       </div>
       <div class="cat-info">
         <div class="cat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"><path d="M8 3L4 6l2 3 2-1v13h8V8l2 1 2-3-4-3a4 4 0 0 1-8 0z"/></svg></div>
@@ -784,7 +793,7 @@
     </div>
     <div class="cat-card cat-brinquedos" onclick="filterByCategory('Brinquedos')">
       <div class="cat-photo">
-        <div class="cat-glyph">🧸</div><div class="cat-veil"></div>
+        <img class="cat-img" src="cat-brinquedos.jpg" alt="" loading="lazy" onerror="this.remove()"/><div class="cat-glyph">🧸</div><div class="cat-veil"></div>
       </div>
       <div class="cat-info">
         <div class="cat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="7" cy="6.5" r="2.6"/><circle cx="17" cy="6.5" r="2.6"/><circle cx="12" cy="14" r="6.4"/><circle cx="9.8" cy="12.5" r="0.7" fill="currentColor" stroke="none"/><circle cx="14.2" cy="12.5" r="0.7" fill="currentColor" stroke="none"/></svg></div>
@@ -831,7 +840,7 @@
 </section>
 
 <footer>
-  <img src="logo-nes.png" alt="" style="width:52px;height:52px;object-fit:contain;margin-bottom:10px"/>
+  <img class="mark-escura" src="logo-nes.png" alt="" style="width:52px;height:52px;object-fit:contain;margin-bottom:10px"/><img class="mark-clara" src="logo-nes-claro.png" alt="" style="width:52px;height:52px;object-fit:contain;margin-bottom:10px"/>
   <div class="footer-logo">N.E.S<span> Shop</span></div>
   <div class="footer-tagline">Sua experiência de compra inteligente</div>
   <div class="hero-stats">
@@ -903,7 +912,7 @@
   <div class="mobile-menu">
     <div class="mobile-menu-header">
       <div class="nav-brand" style="flex:none">
-        <img class="nav-mark" src="logo-nes.png" alt=""/>
+        <img class="nav-mark mark-escura" src="logo-nes.png" alt=""/><img class="nav-mark mark-clara" src="logo-nes-claro.png" alt=""/>
         <div class="nav-word"><span class="w1">N.E.S</span><span class="w2">Shop</span></div>
       </div>
       <button class="mobile-menu-close" onclick="closeMenu()">×</button>
