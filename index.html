@@ -450,13 +450,18 @@
   .nav-word .w2 { display:block; font-family:'Playfair Display',serif; font-size:14px; font-weight:700; letter-spacing:4px; color:var(--white); }
 
   /* ── Hero: a própria marca vira textura de circuito no fundo ── */
+  /* ── Marca no topo: emblema grande atrás do texto ──
+     Para calibrar, mexa só na OPACIDADE abaixo (0.26). Mais alto = mais
+     presente; se atrapalhar a leitura do título, baixe pra ~0.16. */
   .welcome::after {
-    content:''; position:absolute; top:50%; right:-22%;
-    width:min(380px,62vw); aspect-ratio:1.31; transform:translateY(-50%);
-    background:url('logo-nes-completa.png') center/contain no-repeat;
-    opacity:0.055; pointer-events:none;
+    content:''; position:absolute; top:54%; right:-8%;
+    width:min(330px,56vw); aspect-ratio:1; transform:translateY(-50%);
+    background:url('logo-nes.png') center/contain no-repeat;
+    opacity:0.26;
+    filter:drop-shadow(0 0 38px rgba(201,168,76,0.42));
+    pointer-events:none;
   }
-  html.theme-light .welcome::after { opacity:0.11; }
+  html.theme-light .welcome::after { opacity:0.2; filter:none; }
 
   /* ── Faixa de boas-vindas (no lugar do hero de tela cheia) ── */
   .welcome { position:relative; overflow:hidden; padding:82px 24px 24px; }
@@ -490,43 +495,50 @@
      A foto é opcional: cada card aceita  style="--cat-img:url('arquivo.jpg')".
      Sem foto, o gradiente da própria categoria assume — nunca fica quadrado vazio. */
   .cat-grid { grid-template-columns:repeat(2,1fr); gap:12px; }
-  .cat-card { display:block; position:relative; padding:0; overflow:hidden; aspect-ratio:0.82; border-radius:14px; background:var(--card); }
-  .cat-card::before {
-    content:''; position:absolute; inset:0;
+  .cat-card { position:relative; display:flex; flex-direction:column; padding:0; overflow:hidden; border-radius:14px; border:1px solid var(--border); background:var(--card); cursor:pointer; transition:border-color 0.2s, transform 0.15s; }
+  .cat-card:hover { border-color:var(--gold); transform:translateY(-2px); }
+
+  /* Área da foto (ou do gradiente, enquanto não houver foto) */
+  .cat-photo { position:relative; aspect-ratio:1.12; overflow:hidden; }
+  .cat-photo::before {
+    content:''; position:absolute; inset:0; z-index:1;
     background-image:var(--cat-img,none); background-size:cover; background-position:center;
     transition:transform 0.4s ease;
   }
-  .cat-card:hover::before { transform:scale(1.06); }
-  .cat-veil { position:absolute; inset:0; background:linear-gradient(to top, rgba(0,0,0,0.94) 14%, rgba(0,0,0,0.45) 52%, rgba(0,0,0,0.12) 100%); }
-  .cat-body { position:absolute; left:0; right:0; bottom:0; padding:13px 14px; }
-  .cat-icon { width:34px; height:34px; border-radius:9px; border:1px solid rgba(201,168,76,0.45); background:rgba(10,10,10,0.45); display:flex; align-items:center; justify-content:center; margin-bottom:9px; backdrop-filter:blur(3px); }
-  .cat-icon svg { width:17px; height:17px; color:var(--gold); }
-  .cat-name { font-size:13.5px; font-weight:600; color:#fff; }
-  .cat-sub { font-size:11px; color:rgba(255,255,255,0.62); margin-top:1px; }
-  .cat-count { font-size:11px; color:rgba(255,255,255,0.62); margin-top:1px; }
+  .cat-card:hover .cat-photo::before { transform:scale(1.06); }
+  .cat-veil { position:absolute; inset:0; z-index:2; background:linear-gradient(to top, rgba(0,0,0,0.72), rgba(0,0,0,0.04)); }
+  .cat-glyph { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); font-size:52px; opacity:0.2; z-index:0; pointer-events:none; user-select:none; }
 
-  /* Tom próprio de cada categoria, pra não parecerem quatro caixas iguais */
-  .cat-eletronicos { background:linear-gradient(150deg,#1b2430,#0d1116); }
-  .cat-casa        { background:linear-gradient(150deg,#2a2118,#12100d); }
-  .cat-moda        { background:linear-gradient(150deg,#2a1d24,#131013); }
-  .cat-brinquedos  { background:linear-gradient(150deg,#17282a,#0d1414); }
+  /* Painel de informação, agora fora da foto — texto legível nos dois temas */
+  .cat-info { position:relative; padding:0 13px 13px; }
+  .cat-icon { width:32px; height:32px; margin:-16px 0 9px; border-radius:9px; border:1px solid rgba(201,168,76,0.45); background:rgba(12,12,12,0.88); display:flex; align-items:center; justify-content:center; position:relative; z-index:3; }
+  html.theme-light .cat-icon { background:rgba(255,255,255,0.92); }
+  .cat-icon svg { width:16px; height:16px; color:var(--gold); }
+  .cat-name { font-size:13.5px; font-weight:600; color:var(--white); }
+  .cat-sub { font-size:11px; color:var(--muted); margin-top:1px; }
+  .cat-count { font-size:11px; color:var(--muted); margin-top:9px; padding-top:8px; border-top:1px solid var(--border); }
 
-  /* Marca d'água enquanto não há foto. Fica ATRÁS da camada de imagem:
-     no dia em que você definir --cat-img, a foto cobre e ela some sozinha. */
-  .cat-glyph { position:absolute; top:13%; left:50%; transform:translateX(-50%); font-size:58px; opacity:0.16; z-index:0; pointer-events:none; user-select:none; }
-  .cat-card::before { z-index:1; }
-  .cat-veil { z-index:2; }
-  .cat-body { z-index:3; }
+  /* Tom próprio de cada categoria, aplicado na área da foto */
+  .cat-eletronicos .cat-photo { background:linear-gradient(150deg,#1b2430,#0d1116); }
+  .cat-casa .cat-photo        { background:linear-gradient(150deg,#2a2118,#12100d); }
+  .cat-moda .cat-photo        { background:linear-gradient(150deg,#2a1d24,#131013); }
+  .cat-brinquedos .cat-photo  { background:linear-gradient(150deg,#17282a,#0d1414); }
 
-  /* No celular o topo respira menos: o hero não precisa empurrar a
-     fileira de confiança pra fora da primeira tela. (Trancado no mobile
-     pra não sobrescrever o traje de desktop, que vem antes no arquivo.) */
+  /* No celular o topo respira menos. (Trancado no mobile pra não
+     sobrescrever o traje de desktop, que vem antes no arquivo.) */
   @media (max-width:899px) {
-    .hero { min-height:auto; padding:92px 24px 44px; }
-    .hero-btns { gap:10px; }
-    .hero-btns button { flex:1 1 100%; }
     .trust-row { margin-top:34px; padding-top:22px; }
-    .cat-card { aspect-ratio:0.92; }
+
+    /* Categorias numa fileira só, que rola pro lado (padrão iFood/Mercado Livre).
+       Quatro cards fixos numa tela de 360px dariam ~72px cada — nome nenhum
+       caberia. Rolando, cada card fica legível e a fileira continua sendo uma só. */
+    .cat-grid {
+      display:flex; gap:12px; overflow-x:auto; scroll-snap-type:x proximity;
+      -webkit-overflow-scrolling:touch; scrollbar-width:none;
+      margin-right:-24px; padding-right:24px; padding-bottom:2px;
+    }
+    .cat-grid::-webkit-scrollbar { display:none; }
+    .cat-card { flex:0 0 clamp(142px,43vw,170px); scroll-snap-align:start; }
   }
 
   /* ── Banner de oferta (a % é calculada do catálogo real) ── */
@@ -541,6 +553,7 @@
   @media (min-width:900px) {
     .nav-brand { flex:none; }
     .welcome { max-width:1200px; margin:0 auto; padding:132px 40px 30px; }
+    .welcome::after { width:min(400px,32vw); right:5%; opacity:0.3; }
     .nav-mark { width:44px; height:44px; }
     .nav-word .w1 { font-size:17px; }
     .nav-word .w2 { font-size:15px; }
@@ -548,13 +561,116 @@
     .trust-item { padding:4px 26px; border-left:1px solid var(--border); }
     .trust-item:first-child { border-left:none; padding-left:0; }
     .cat-grid { grid-template-columns:repeat(4,1fr); gap:16px; }
-    .cat-card { aspect-ratio:0.9; }
-    .cat-body { padding:16px; }
+    .cat-card { aspect-ratio:auto; }
+    .cat-info { padding:0 15px 15px; }
     .offer { flex-direction:row; align-items:center; justify-content:space-between; gap:28px; padding:30px 34px; max-width:1200px; margin-left:auto; margin-right:auto; }
     .offer-emojis { font-size:56px; }
     .offer-cta { align-self:auto; }
     .section-head-row { max-width:1200px; margin-left:auto; margin-right:auto; }
   }
+  /* ── Fileira de produtos que rola pro lado ──
+     Um componente só, usado no catálogo (3 fileiras) e na página de
+     produto (a fileira "Outros"). */
+  .rail { margin-bottom:30px; }
+  .rail:last-child { margin-bottom:0; }
+  .rail-head { display:flex; align-items:baseline; justify-content:space-between; gap:12px; margin-bottom:12px; }
+  .rail-title { font-family:'Playfair Display',serif; font-size:18px; font-weight:700; }
+  .rail-sub { font-size:11.5px; color:var(--muted); margin-top:1px; }
+  .rail-track {
+    display:flex; gap:12px; overflow-x:auto; scroll-snap-type:x proximity;
+    -webkit-overflow-scrolling:touch; scrollbar-width:none; padding-bottom:2px;
+    margin-right:-24px; padding-right:24px;
+  }
+  .rail-track::-webkit-scrollbar { display:none; }
+  .rail-track .product-card { flex:0 0 clamp(148px,44vw,180px); scroll-snap-align:start; }
+  /* dentro da página de produto o recuo é outro */
+  .pp-details .rail-track { margin-right:-20px; padding-right:20px; }
+
+  @media (min-width:900px) {
+    .rail-track { margin-right:0; padding-right:0; }
+    .rail-track .product-card { flex:0 0 198px; }
+    .rail-title { font-size:20px; }
+    .pp-details .rail-track { margin-right:0; padding-right:0; }
+  }
+  /* ── Melhorias aproveitadas da revisão do DeepSeek ── */
+  :root { --radius:16px; --ease:cubic-bezier(0.4,0,0.2,1); --shadow-hover:0 14px 40px rgba(0,0,0,0.5); }
+  html.theme-light { --shadow-hover:0 14px 40px rgba(0,0,0,0.12); }
+
+  ::-webkit-scrollbar { width:8px; height:8px; }
+  ::-webkit-scrollbar-track { background:transparent; }
+  ::-webkit-scrollbar-thumb { background:var(--border); border-radius:4px; }
+  ::-webkit-scrollbar-thumb:hover { background:var(--gold); }
+
+  /* Card de produto: parcelamento visível e botão com palavra, não só "+" */
+  .product-card { border-radius:var(--radius); }
+  .product-card:hover { box-shadow:var(--shadow-hover); }
+  .product-name {
+    display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical;
+    overflow:hidden; min-height:2.6em;   /* nome longo não desalinha a fileira */
+  }
+  .product-price-row { display:flex; align-items:baseline; gap:8px; flex-wrap:wrap; }
+  .product-installment { font-size:10.5px; color:var(--muted); margin-top:2px; }
+  .btn-buy {
+    width:100%; margin-top:11px; display:flex; align-items:center; justify-content:center; gap:6px;
+    background:var(--gold); color:var(--black); border:none; border-radius:9px; padding:9px;
+    font-family:'Inter',sans-serif; font-size:12.5px; font-weight:700; cursor:pointer;
+    transition:background 0.2s, transform 0.12s;
+  }
+  .btn-buy:hover { background:var(--gold-light); }
+  .btn-buy:active { transform:scale(0.96); }
+  .btn-buy svg { width:14px; height:14px; }
+
+  /* Entrada suave dos cards */
+  @keyframes cardIn { from { opacity:0; transform:translateY(14px); } to { opacity:1; transform:none; } }
+  .products-grid .product-card { opacity:0; animation:cardIn 0.45s var(--ease) forwards; }
+  .products-grid .product-card:nth-child(1){animation-delay:.03s}
+  .products-grid .product-card:nth-child(2){animation-delay:.06s}
+  .products-grid .product-card:nth-child(3){animation-delay:.09s}
+  .products-grid .product-card:nth-child(4){animation-delay:.12s}
+  .products-grid .product-card:nth-child(5){animation-delay:.15s}
+  .products-grid .product-card:nth-child(6){animation-delay:.18s}
+  .products-grid .product-card:nth-child(n+7){animation-delay:.21s}
+  @media (prefers-reduced-motion:reduce) { .products-grid .product-card { animation:none; opacity:1; } }
+
+  /* Badge do carrinho com pulinho ao mudar */
+  @keyframes badgePop { 0%{transform:scale(.5)} 100%{transform:scale(1)} }
+  .cart-badge.pop { animation:badgePop 0.3s cubic-bezier(.68,-.55,.265,1.55); }
+
+  /* ── Sugestões de busca (autocomplete) ── */
+  .nav-search-wrap { position:relative; flex:1; max-width:340px; margin:0 20px; display:none; }
+  .nav-search-wrap .nav-search { margin:0; max-width:none; flex:none; width:100%; }
+  .search-suggest {
+    position:absolute; top:calc(100% + 8px); left:0; right:0; z-index:120;
+    background:var(--dark); border:1px solid var(--border); border-radius:12px;
+    padding:6px 0; max-height:340px; overflow-y:auto; display:none;
+    box-shadow:0 12px 40px rgba(0,0,0,0.45);
+  }
+  .search-suggest.open { display:block; }
+  .sug-item { display:flex; align-items:center; gap:11px; padding:9px 14px; cursor:pointer; transition:background 0.15s; }
+  .sug-item:hover { background:var(--card); }
+  .sug-emoji { font-size:20px; flex-shrink:0; }
+  .sug-text { flex:1; min-width:0; }
+  .sug-name { display:block; font-size:13px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .sug-cat { display:block; font-size:10.5px; color:var(--muted); }
+  .sug-price { font-size:12.5px; font-weight:700; color:var(--gold); white-space:nowrap; }
+  .sug-empty { padding:14px; font-size:12.5px; color:var(--muted); text-align:center; }
+  .msearch-results { overflow-y:auto; }
+  .msearch-results .sug-item { padding:12px 16px; border-bottom:1px solid var(--border); }
+  @media (min-width:900px) { .nav-search-wrap { display:block; } }
+  /* ── Suporte a foto de produto ──
+     Todo lugar que mostra produto aceita foto. Sem foto, o emoji segura o
+     lugar; se a foto der 404, ele volta sozinho (nada de quadrado quebrado). */
+  .ph-img { width:100%; height:100%; object-fit:cover; display:block; }
+  .product-img, .pp-hero, .cart-item-img, .product-card-mini-emoji, .sug-emoji { overflow:hidden; }
+  .sug-emoji, .product-card-mini-emoji { width:34px; height:34px; border-radius:7px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+  .sug-emoji .ph-img, .product-card-mini-emoji .ph-img { border-radius:7px; }
+  .cart-item-img .ph-img { border-radius:10px; }
+
+  /* Galeria na página de produto (quando houver mais de uma foto) */
+  .pp-thumbs { display:flex; gap:8px; margin-top:10px; flex-wrap:wrap; }
+  .pp-thumb { width:56px; height:56px; padding:0; border:1px solid var(--border); border-radius:9px; overflow:hidden; background:var(--card); cursor:pointer; transition:border-color 0.2s; }
+  .pp-thumb.on, .pp-thumb:hover { border-color:var(--gold); }
+  .pp-thumb img { width:100%; height:100%; object-fit:cover; display:block; }
 </style>
 </head>
 <body>
@@ -567,9 +683,12 @@
     <img class="nav-mark" src="logo-nes.png" alt="N.E.S Shop"/>
     <div class="nav-word"><span class="w1">N.E.S</span><span class="w2">Shop</span></div>
   </div>
-  <div class="nav-search">
-    <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-    <input type="text" id="searchInput" placeholder="Buscar produtos..." oninput="filterProducts(this.value)"/>
+  <div class="nav-search-wrap">
+    <div class="nav-search">
+      <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+      <input type="text" id="searchInput" placeholder="Buscar produtos..." autocomplete="off" oninput="onSearchInput(this.value)" onfocus="onSearchInput(this.value)"/>
+    </div>
+    <div class="search-suggest" id="searchSuggest"></div>
   </div>
   <div class="nav-actions">
     <button class="nav-search-icon" onclick="openMobileSearch()" aria-label="Buscar">
@@ -631,8 +750,10 @@
        style="--cat-img:url('cat-eletronicos.jpg')". Sem foto, vale o gradiente. -->
   <div class="cat-grid">
     <div class="cat-card cat-eletronicos" onclick="filterByCategory('Eletrônicos')">
-      <div class="cat-glyph">📱</div><div class="cat-veil"></div>
-      <div class="cat-body">
+      <div class="cat-photo">
+        <div class="cat-glyph">📱</div><div class="cat-veil"></div>
+      </div>
+      <div class="cat-info">
         <div class="cat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="10" y1="18" x2="14" y2="18"/></svg></div>
         <div class="cat-name">Eletrônicos</div>
         <div class="cat-sub">Tecnologia e inovação</div>
@@ -640,8 +761,10 @@
       </div>
     </div>
     <div class="cat-card cat-casa" onclick="filterByCategory('Casa')">
-      <div class="cat-glyph">🛋️</div><div class="cat-veil"></div>
-      <div class="cat-body">
+      <div class="cat-photo">
+        <div class="cat-glyph">🛋️</div><div class="cat-veil"></div>
+      </div>
+      <div class="cat-info">
         <div class="cat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M3 10l9-7 9 7v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 13 15 13 15 22"/></svg></div>
         <div class="cat-name">Casa &amp; Decoração</div>
         <div class="cat-sub">Conforto e estilo</div>
@@ -649,8 +772,10 @@
       </div>
     </div>
     <div class="cat-card cat-moda" onclick="filterByCategory('Moda')">
-      <div class="cat-glyph">👗</div><div class="cat-veil"></div>
-      <div class="cat-body">
+      <div class="cat-photo">
+        <div class="cat-glyph">👗</div><div class="cat-veil"></div>
+      </div>
+      <div class="cat-info">
         <div class="cat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"><path d="M8 3L4 6l2 3 2-1v13h8V8l2 1 2-3-4-3a4 4 0 0 1-8 0z"/></svg></div>
         <div class="cat-name">Moda</div>
         <div class="cat-sub">Estilo para você</div>
@@ -658,8 +783,10 @@
       </div>
     </div>
     <div class="cat-card cat-brinquedos" onclick="filterByCategory('Brinquedos')">
-      <div class="cat-glyph">🧸</div><div class="cat-veil"></div>
-      <div class="cat-body">
+      <div class="cat-photo">
+        <div class="cat-glyph">🧸</div><div class="cat-veil"></div>
+      </div>
+      <div class="cat-info">
         <div class="cat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="7" cy="6.5" r="2.6"/><circle cx="17" cy="6.5" r="2.6"/><circle cx="12" cy="14" r="6.4"/><circle cx="9.8" cy="12.5" r="0.7" fill="currentColor" stroke="none"/><circle cx="14.2" cy="12.5" r="0.7" fill="currentColor" stroke="none"/></svg></div>
         <div class="cat-name">Brinquedos</div>
         <div class="cat-sub">Diversão garantida</div>
@@ -696,7 +823,10 @@
   </div>
   <div class="catalog-layout">
     <aside class="filters-panel" id="filtersPanel"></aside>
-    <div class="products-grid" id="productsGrid"></div>
+    <div>
+      <div id="catalogRails"></div>
+      <div class="products-grid" id="productsGrid"></div>
+    </div>
   </div>
 </section>
 
@@ -800,10 +930,11 @@
 
 <div class="msearch-overlay" id="msearch">
   <div class="msearch-bar">
-    <input id="msearchInput" type="text" placeholder="Buscar produtos..." oninput="filterProducts(this.value)" onkeydown="if(event.key==='Enter'){closeMobileSearch();document.getElementById('produtos').scrollIntoView();}"/>
+    <input id="msearchInput" type="text" placeholder="Buscar produtos..." autocomplete="off" oninput="onSearchInput(this.value)" onkeydown="if(event.key==='Enter'){closeMobileSearch();document.getElementById('produtos').scrollIntoView();}"/>
     <button class="msearch-cancel" onclick="closeMobileSearch()">Cancelar</button>
   </div>
-  <div class="msearch-hint">Digite o que procura — a busca acontece na hora.</div>
+  <div class="msearch-hint" id="msearchHint">Digite o que procura — a busca acontece na hora.</div>
+  <div class="msearch-results" id="msearchResults"></div>
 </div>
 
 <div class="bottom-bar">
@@ -1165,7 +1296,7 @@ const Nayra = {
   productCard(p) {
     const oldP = p.oldPrice ? `<div style="font-size:10px;color:var(--muted);text-decoration:line-through">${this.brl(p.oldPrice)} (-${Math.round((1-p.price/p.oldPrice)*100)}%)</div>` : '';
     return `<div class="product-card-mini" onclick="addToCart(${p.id});showToast('✓ ${p.name} no carrinho!')">
-      <div class="product-card-mini-emoji">${p.emoji}</div>
+      <div class="product-card-mini-emoji">${midiaHtml(p)}</div>
       <div class="product-card-mini-info">
         <div class="product-card-mini-name">${p.name}</div>${oldP}
         <div class="product-card-mini-price">${this.brl(p.price)}</div>
@@ -1842,21 +1973,56 @@ function sendSuggestion(btn) {
 // ═══════════════════════════════════════════════════════════
 //  PRODUTOS / CATÁLOGO / CARRINHO
 // ═══════════════════════════════════════════════════════════
-function renderProducts(list) {
-  const grid = document.getElementById('productsGrid');
-  if (!list.length) { grid.innerHTML = '<p style="color:var(--muted);font-size:13px;grid-column:1/-1;text-align:center;padding:40px 0">Nenhum produto encontrado.</p>'; return; }
-  grid.innerHTML = list.map(p => `
+// ── Foto de produto ─────────────────────────────────────────
+// Para dar foto a um produto, acrescente no catálogo:
+//    imgs: ['fotos/fone-1.jpg', 'fotos/fone-2.jpg']
+// Uma só também vale:  img: 'fotos/fone.jpg'
+// Sem nada disso, o emoji continua valendo — o site nunca fica vazio.
+function fotosDe(p) {
+  if (Array.isArray(p.imgs)) return p.imgs.filter(Boolean);
+  return p.img ? [p.img] : [];
+}
+// Se a foto não carregar (link errado, arquivo apagado), volta pro emoji
+function fotoFalhou(el, emoji) {
+  if (el && el.parentNode) el.parentNode.innerHTML = emoji;
+}
+function midiaHtml(p) {
+  const f = fotosDe(p);
+  if (!f.length) return p.emoji;
+  const alt = String(p.name).replace(/"/g, '&quot;');
+  return '<img class="ph-img" src="' + f[0] + '" alt="' + alt + '" loading="lazy" onerror="fotoFalhou(this,\'' + p.emoji + '\')"/>';
+}
+
+// Um card de produto — usado tanto na grade quanto nas fileiras que rolam
+function productCardHtml(p) {
+  const badge = p.badge
+    ? `<span class="product-badge ${p.badge==='new'?'new':p.badge==='hot'?'hot':''}">${p.badge==='new'?'Novo':p.badge==='hot'?'🔥 Hot':'Oferta'}</span>`
+    : '';
+  const antigo = p.oldPrice
+    ? `<span class="product-price-old">R$ ${p.oldPrice.toFixed(2).replace('.',',')}</span>`
+    : '';
+  return `
     <div class="product-card" onclick="openProduct(${p.id})">
-      <div class="product-img"><span>${p.emoji}</span>${p.badge ? `<span class="product-badge ${p.badge==='new'?'new':p.badge==='hot'?'hot':''}">${p.badge==='new'?'Novo':p.badge==='hot'?'🔥 Hot':'Oferta'}</span>` : ''}</div>
+      <div class="product-img">${midiaHtml(p)}${badge}</div>
       <div class="product-info">
         <div class="product-category">${p.category}</div>
         <div class="product-name">${p.name}</div>
-        <div class="product-footer">
-          <div>${p.oldPrice ? `<div class="product-price-old">R$ ${p.oldPrice.toFixed(2).replace('.',',')}</div>` : ''}<div class="product-price">R$ ${p.price.toFixed(2).replace('.',',')}</div></div>
-          <button class="add-btn" onclick="event.stopPropagation();addToCart(${p.id})">+</button>
+        <div class="product-price-row">
+          <span class="product-price">R$ ${p.price.toFixed(2).replace('.',',')}</span>${antigo}
         </div>
+        <div class="product-installment">ou 12x de R$ ${(p.price/12).toFixed(2).replace('.',',')}</div>
+        <button class="btn-buy" onclick="event.stopPropagation();addToCart(${p.id})">
+          <svg fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Comprar
+        </button>
       </div>
-    </div>`).join('');
+    </div>`;
+}
+
+function renderProducts(list) {
+  const grid = document.getElementById('productsGrid');
+  if (!list.length) { grid.innerHTML = '<p style="color:var(--muted);font-size:13px;grid-column:1/-1;text-align:center;padding:40px 0">Nenhum produto encontrado.</p>'; return; }
+  grid.innerHTML = list.map(productCardHtml).join('');
 }
 
 // Passada 2: estas duas agora alimentam o ESTADO da vitrine (view) em vez de
@@ -1898,7 +2064,7 @@ function renderCart() {
   footer.style.display = 'block';
   el.innerHTML = cart.map(p => `
     <div class="cart-item">
-      <div class="cart-item-img">${p.emoji}</div>
+      <div class="cart-item-img">${midiaHtml(p)}</div>
       <div class="cart-item-info"><div class="cart-item-name">${p.name}${p.qty>1?` (x${p.qty})`:''}</div><div class="cart-item-price">R$ ${(p.price*p.qty).toFixed(2).replace('.',',')}</div></div>
       <button class="cart-item-remove" onclick="removeFromCart(${p.id})">×</button>
     </div>`).join('');
@@ -2078,11 +2244,51 @@ function activeFilterCount() {
   return n;
 }
 
+// ── Fileiras que rolam pro lado ─────────────────────────────
+function railHtml(titulo, lista, sub) {
+  if (!lista || !lista.length) return '';
+  return '<div class="rail"><div class="rail-head"><div>' +
+    '<div class="rail-title">' + titulo + '</div>' +
+    (sub ? '<div class="rail-sub">' + sub + '</div>' : '') +
+    '</div></div><div class="rail-track">' +
+    lista.map(productCardHtml).join('') + '</div></div>';
+}
+
+// As 3 fileiras do catálogo. Nomes com sentido em vez de "parte 1, 2 e 3" —
+// e a última garante que nenhum produto fique inalcançável.
+function renderCatalogRails() {
+  const box = document.getElementById('catalogRails');
+  if (!box) return;
+  const promos = products.filter(p => p.oldPrice && p.oldPrice > p.price);
+  const novos  = products.filter(p => p.badge === 'new');
+  box.innerHTML =
+    railHtml('Em promoção', promos, promos.length + (promos.length === 1 ? ' produto com desconto' : ' produtos com desconto')) +
+    railHtml('Novidades', novos, novos.length + (novos.length === 1 ? ' item recém-chegado' : ' itens recém-chegados')) +
+    railHtml('Todo o catálogo', products, products.length + ' produtos');
+}
+
+// Fileira = vitrine (descobrir). Grade = resultado (comparar).
+// Sem filtro nem busca mostramos as fileiras; assim que o cliente filtra ou
+// busca, a grade assume — porque fileira de 2 resultados não ajuda ninguém.
+function mostrarFileiras(sim) {
+  const rails = document.getElementById('catalogRails');
+  const grid  = document.getElementById('productsGrid');
+  if (rails) rails.style.display = sim ? '' : 'none';
+  if (grid)  grid.style.display  = sim ? 'none' : '';
+  if (sim) renderCatalogRails();
+}
+
+function vitrineLimpa() {
+  return !view.search && view.cats.size === 0 && view.minRating === 0 && view.maxPrice >= PRICE_MAX;
+}
+
 // ── Ponto único que atualiza a vitrine inteira ──
 function applyView(opts) {
   opts = opts || {};
   const list = computeList();
-  renderProducts(list);
+  const semFiltro = vitrineLimpa();
+  mostrarFileiras(semFiltro);
+  if (!semFiltro) renderProducts(list);
 
   let title = 'Todos os Produtos';
   if (view.search) title = 'Resultados: "' + view.search + '"';
@@ -2189,7 +2395,7 @@ function renderBreadcrumbs() {
 // ── Página de produto ────────────────────────────────────────
 function comboCardHtml(c) {
   return '<div class="product-card-mini" onclick="openProduct(' + c.id + ')">' +
-    '<div class="product-card-mini-emoji">' + c.emoji + '</div>' +
+    '<div class="product-card-mini-emoji">' + midiaHtml(c) + '</div>' +
     '<div class="product-card-mini-info">' +
       '<div class="product-card-mini-name">' + c.name + '</div>' +
       '<div class="product-card-mini-price">' + brl(c.price) + '</div>' +
@@ -2235,9 +2441,34 @@ function productPageHtml(p) {
       '<div class="pp-combos">' + combos.map(comboCardHtml).join('') + '</div></div>'
     : '';
 
+  // "Outros": o resto do catálogo, começando pela mesma categoria (que é o
+  // que mais tende a interessar) e sem repetir o produto aberto nem os combos.
+  const jaMostrados = [p.id].concat(p.combos || []);
+  const outros = products
+    .filter(x => jaMostrados.indexOf(x.id) === -1)
+    .sort(function (a, b) {
+      const pa = a.category === p.category ? 0 : 1;
+      const pb = b.category === p.category ? 0 : 1;
+      return pa - pb;
+    })
+    .slice(0, 12);
+  const outrosHtml = outros.length
+    ? '<div class="pp-section" style="grid-column:1/-1"><div class="pp-section-title">Outros</div>' +
+      '<div class="rail-track">' + outros.map(productCardHtml).join('') + '</div></div>'
+    : '';
+
+  const fotos = fotosDe(p);
+  const galeria = fotos.length > 1
+    ? '<div class="pp-thumbs">' + fotos.map(function (f, i) {
+        return '<button class="pp-thumb' + (i === 0 ? ' on' : '') + '" onclick="trocarFoto(this,\'' + f + '\')">' +
+               '<img src="' + f + '" alt="" loading="lazy"/></button>';
+      }).join('') + '</div>'
+    : '';
+
   return '' +
-    '<div class="pp-hero">' + p.emoji + badge + '</div>' +
+    '<div class="pp-hero" id="ppHero">' + midiaHtml(p) + badge + '</div>' +
     '<div class="pp-content">' +
+      galeria +
       '<div class="pp-cat">' + p.category + '</div>' +
       '<div class="pp-name">' + p.name + '</div>' +
       ratingRow +
@@ -2258,7 +2489,17 @@ function productPageHtml(p) {
         '<div class="pp-specs">' + specs + '</div>' +
       '</div>' +
       combosHtml +
+      outrosHtml +
     '</div>';
+}
+
+// Troca a foto principal ao tocar numa miniatura
+function trocarFoto(btn, src) {
+  const hero = document.getElementById('ppHero');
+  const img = hero ? hero.querySelector('.ph-img') : null;
+  if (img) img.setAttribute('src', src);
+  const tira = btn.parentNode;
+  if (tira) Array.prototype.forEach.call(tira.children, function (b) { b.classList.toggle('on', b === btn); });
 }
 
 function openProduct(id) {
@@ -2305,6 +2546,64 @@ document.addEventListener('keydown', function (e) {
   else if (document.getElementById('filtersSheet').classList.contains('open')) closeFilters();
   else if (document.getElementById('settingsOverlay').classList.contains('open')) closeSettings();
 });
+
+// ── Sugestões de busca (autocomplete) ───────────────────────
+// Reaproveita a busca com score da própria Nayra: quem já entende
+// "celular = smartphone" é ela, não vale reinventar aqui.
+function suggestionsHtml(q) {
+  const achados = Nayra.search(q).slice(0, 6);
+  if (!achados.length) {
+    return '<div class="sug-empty">Nada encontrado para "' + escapeHtml(q) + '"</div>';
+  }
+  return achados.map(function (p) {
+    return '<div class="sug-item" onclick="abrirDaBusca(' + p.id + ')">' +
+      '<span class="sug-emoji">' + midiaHtml(p) + '</span>' +
+      '<span class="sug-text"><span class="sug-name">' + p.name + '</span>' +
+      '<span class="sug-cat">' + p.category + '</span></span>' +
+      '<span class="sug-price">' + brl(p.price) + '</span></div>';
+  }).join('');
+}
+
+function onSearchInput(q) {
+  filterProducts(q);                       // a vitrine acompanha a digitação
+  const texto = String(q || '').trim();
+  const html = texto.length >= 2 ? suggestionsHtml(texto) : '';
+
+  const desk = document.getElementById('searchSuggest');
+  if (desk) { desk.innerHTML = html; desk.classList.toggle('open', !!html); }
+
+  const mob = document.getElementById('msearchResults');
+  const dica = document.getElementById('msearchHint');
+  if (mob) mob.innerHTML = html;
+  if (dica) dica.style.display = html ? 'none' : '';
+}
+
+function abrirDaBusca(id) {
+  fecharSugestoes();
+  closeMobileSearch();
+  openProduct(id);
+}
+function fecharSugestoes() {
+  const d = document.getElementById('searchSuggest');
+  if (d) d.classList.remove('open');
+}
+// clicar fora fecha a lista
+document.addEventListener('click', function (e) {
+  const wrap = document.querySelector('.nav-search-wrap');
+  if (wrap && !wrap.contains(e.target)) fecharSugestoes();
+});
+
+// Badge do carrinho dá um pulinho quando muda
+const _badgePop = updateCartBadge;
+updateCartBadge = function () {
+  _badgePop();
+  const b = document.getElementById('cartBadge');
+  if (b && b.style.display !== 'none') {
+    b.classList.remove('pop');
+    void b.offsetWidth;              // reinicia a animação
+    b.classList.add('pop');
+  }
+};
 
 // Primeira pintura do catálogo (agora com filtros no ar)
 applyView();
@@ -2377,6 +2676,7 @@ function verOfertas() {
   view.minRating = 0;
   view.maxPrice = PRICE_MAX;
   const promos = products.filter(p => p.oldPrice && p.oldPrice > p.price);
+  mostrarFileiras(false);          // resultado de oferta é lista, não vitrine
   renderProducts(promos);
   const st = document.getElementById('sectionTitle');
   if (st) st.textContent = 'Em promoção';
