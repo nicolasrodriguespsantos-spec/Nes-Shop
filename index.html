@@ -12,7 +12,7 @@
 <style>
   :root {
     --black:#0a0a0a; --dark:#111; --card:#161616; --border:#222;
-    --gold:#c9a84c; --gold-light:#e8c96a; --white:#f0ede8; --muted:#888; --red:#c0392b;
+    --gold:#c9a84c; --maxw:1200px; --gold-light:#e8c96a; --white:#f0ede8; --muted:#888; --red:#c0392b;
   }
   * { margin:0; padding:0; box-sizing:border-box; }
   html { scroll-behavior:smooth; }
@@ -417,6 +417,10 @@
 
     /* Catálogo em duas colunas: filtros à esquerda, grade à direita */
     .catalog-layout { display:grid; grid-template-columns:238px 1fr; gap:30px; align-items:start; max-width:1200px; margin:0 auto; }
+    /* Sem isto, a coluna da direita cresce até caber a fileira inteira de
+       produtos (item de grade tem largura mínima automática), a página fica
+       mais larga que a tela e todo o conteúdo centralizado parece torto. */
+    .catalog-layout > * { min-width:0; }
     .filters-panel { display:block; position:sticky; top:124px; background:var(--card); border:1px solid var(--border); border-radius:14px; padding:4px 18px 18px; }
     .filter-open-btn { display:none; }
     .catalog-layout .products-grid { grid-template-columns:repeat(3,1fr); max-width:none; margin:0; }
@@ -583,6 +587,8 @@
   }
   .rail-track::-webkit-scrollbar { display:none; }
   .rail-track .product-card { flex:0 0 clamp(148px,44vw,180px); scroll-snap-align:start; }
+  /* trava de segurança: a fileira rola por dentro, nunca alarga a página */
+  .rail, .rail-track { max-width:100%; min-width:0; }
   /* dentro da página de produto o recuo é outro */
   .pp-details .rail-track { margin-right:-20px; padding-right:20px; }
 
@@ -691,6 +697,48 @@
   .nayra-btn.arrastando .nayra-pulse { opacity:0; }
   /* deslize suave até encostar na lateral quando o dedo solta */
   .nayra-btn.encaixando { transition:left 0.24s var(--ease), top 0.24s var(--ease); }
+  /* ── Telas grandes: monitor e TV ──
+     As regras de desktop paravam em 1300px. Acima disso, uma tela de 2560px
+     usava o mesmo layout de um notebook — conteúdo travado em 1200px e texto
+     do mesmo tamanho, o que numa TV vira uma tirinha no meio do nada.
+     Aqui o conteúdo respira: fica mais largo, ganha mais colunas e o texto
+     acompanha a distância maior de leitura. */
+  @media (min-width:1500px) {
+    :root { --maxw:1460px; }
+    body { font-size:16px; }
+    nav { padding:0 max(40px, calc((100vw - var(--maxw)) / 2)); height:74px; }
+    .cat-bar { top:74px; }
+    #produtos, #categorias { scroll-margin-top:138px; }
+    .welcome, .section-head-row, .catalog-bar, .catalog-layout,
+    .section-header, .cat-grid, .offer,
+    .footer-links, .footer-logo, .footer-tagline, .footer-copy { max-width:var(--maxw); }
+    .cat-bar-inner { max-width:var(--maxw); padding:0 max(40px, calc((100vw - var(--maxw)) / 2 - 40px)); }
+    section { padding:88px 40px; }
+    .welcome { padding:152px 40px 40px; }
+    .welcome-title { font-size:44px; }
+    .welcome-sub { font-size:15.5px; max-width:660px; }
+    .welcome::after { width:min(480px,26vw); right:7%; }
+    .section-title { font-size:38px; }
+    .rail-title { font-size:23px; }
+    .trust-title { font-size:14px; }
+    .trust-sub { font-size:12.5px; }
+    .catalog-layout { grid-template-columns:266px 1fr; gap:38px; }
+    .catalog-layout .products-grid { grid-template-columns:repeat(5,1fr); gap:22px; }
+    .rail-track .product-card { flex:0 0 234px; }
+    .cat-grid { grid-template-columns:repeat(4,1fr); gap:22px; }
+    .product-name { font-size:14px; }
+    .product-price { font-size:20px; }
+    .product-page { max-width:1240px; }
+  }
+
+  @media (min-width:1900px) {
+    :root { --maxw:1720px; }
+    .welcome-title { font-size:52px; }
+    .section-title { font-size:44px; }
+    .catalog-layout .products-grid { grid-template-columns:repeat(6,1fr); }
+    .rail-track .product-card { flex:0 0 256px; }
+    .product-page { max-width:1440px; }
+  }
 </style>
 </head>
 <body>
