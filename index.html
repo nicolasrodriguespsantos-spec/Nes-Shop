@@ -679,6 +679,18 @@
   html.theme-light .mark-escura { display:none; }
   html.theme-light .mark-clara  { display:block; }
   html.theme-light .welcome::after { background-image:url('logo-nes-claro.png'); }
+  /* ── Bolinha da Nayra: tamanho ajustável e arrastável ── */
+  .nayra-btn { touch-action:none; }          /* o dedo arrasta o botão, não a página */
+  .nayra-btn.tam-p { width:46px; height:46px; }
+  .nayra-btn.tam-p svg { width:20px; height:20px; }
+  .nayra-btn.tam-m { width:56px; height:56px; }
+  .nayra-btn.tam-m svg { width:24px; height:24px; }
+  .nayra-btn.tam-g { width:70px; height:70px; }
+  .nayra-btn.tam-g svg { width:31px; height:31px; }
+  .nayra-btn.arrastando { transition:none; transform:scale(1.08); box-shadow:0 10px 34px rgba(201,168,76,0.55); }
+  .nayra-btn.arrastando .nayra-pulse { opacity:0; }
+  /* deslize suave até encostar na lateral quando o dedo solta */
+  .nayra-btn.encaixando { transition:left 0.24s var(--ease), top 0.24s var(--ease); }
 </style>
 </head>
 <body>
@@ -856,7 +868,7 @@
   <div class="footer-copy">© 2026 N.E.S Shop. Todos os direitos reservados.</div>
 </footer>
 
-<button class="nayra-btn" onclick="openNayra()">
+<button class="nayra-btn" onclick="cliqueNayra()">
   <div class="nayra-pulse"></div>
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2z"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>
 </button>
@@ -996,6 +1008,24 @@
         <button class="toggle on" id="nayraToggle" onclick="toggleNayraBall()" role="switch" aria-checked="true">
           <span class="toggle-knob"></span>
         </button>
+      </div>
+      <div class="setting-row">
+        <div class="setting-info">
+          <div class="setting-name">Tamanho da bolinha</div>
+          <div class="setting-desc">Arraste a bolinha para escolher o lado e a altura — ela encaixa sozinha na lateral.</div>
+        </div>
+        <div class="theme-switch">
+          <button class="theme-opt" data-tam="p" onclick="aplicarTamanhoNayra('p')">P</button>
+          <button class="theme-opt" data-tam="m" onclick="aplicarTamanhoNayra('m')">M</button>
+          <button class="theme-opt" data-tam="g" onclick="aplicarTamanhoNayra('g')">G</button>
+        </div>
+      </div>
+      <div class="setting-row">
+        <div class="setting-info">
+          <div class="setting-name">Posição da bolinha</div>
+          <div class="setting-desc">Devolve ao canto inferior direito.</div>
+        </div>
+        <button class="filter-clear" style="width:auto;margin:0;padding:9px 15px;white-space:nowrap" onclick="resetarPosNayra()">Voltar ao canto</button>
       </div>
     </div>
   </div>
@@ -2615,6 +2645,213 @@ updateCartBadge = function () {
     b.classList.add('pop');
   }
 };
+
+// ── Bolinha da Nayra: tamanho e posição ─────────────────────
+const NAYRA_LADO = { p: 46, m: 56, g: 70 };
+
+function nayraEl() { return document.querySelector('.nayra-btn'); }
+
+// Mantém a bolinha dentro da tela: nunca atrás do header, nunca escondida
+// atrás da barra de baixo, nunca fora da borda.
+function limitarPosNayra(x, y, lado) {
+  const m = 12;
+  const rodape = window.innerWidth < 900 ? 70 : 18;   // barra de baixo só existe no celular
+  const maxX = Math.max(m, window.innerWidth  - lado - m);
+  const maxY = Math.max(78, window.innerHeight - lado - rodape);
+  return { x: Math.min(Math.max(x, m), maxX), y: Math.min(Math.max(y, 78), maxY) };
+}
+
+// A bolinha só vive nas laterais: guardamos o LADO (não a coordenada solta).
+// Assim, se o celular girar ou a janela mudar, ela continua colada na borda
+// certa em vez de acabar no meio da tela.
+function aplicarPosNayra() {
+  const b = nayraEl();
+  if (!b) return;
+  const pos = nesPrefs.nayraPos;
+  if (!pos) {                       // sem posição salva: volta pro canto do CSS
+    b.style.left = ''; b.style.top = ''; b.style.right = ''; b.style.bottom = '';
+    posicionarTeaser();
+    return;
+  }
+  const lado = NAYRA_LADO[nesPrefs.nayraTam || 'm'];
+  const x = pos.lado === 'esq' ? 12 : window.innerWidth - lado - 12;
+  const c = limitarPosNayra(x, pos.y, lado);
+  b.style.left = c.x + 'px';
+  b.style.top = c.y + 'px';
+  b.style.right = 'auto';
+  b.style.bottom = 'auto';
+  posicionarTeaser();
+}
+
+// O balão proativo acompanha a bolinha, senão ficaria falando sozinho no canto
+function posicionarTeaser() {
+  const t = document.getElementById('nayraTeaser');
+  const b = nayraEl();
+  if (!t || !b) return;
+  if (!nesPrefs.nayraPos) { t.style.left = ''; t.style.right = ''; t.style.top = ''; t.style.bottom = ''; return; }
+  const r = b.getBoundingClientRect();
+  const larg = Math.min(250, window.innerWidth - 24);
+  // com a bolinha à esquerda, o balão abre pra direita (e vice-versa),
+  // senão ele sairia da tela
+  const naEsquerda = nesPrefs.nayraPos.lado === 'esq';
+  let x = naEsquerda ? r.left : r.right - larg;
+  x = Math.max(12, Math.min(x, window.innerWidth - larg - 12));
+  t.style.left = x + 'px';
+  t.style.right = 'auto';
+  t.style.top = 'auto';
+  t.style.bottom = Math.max(12, window.innerHeight - r.top + 12) + 'px';
+}
+
+function aplicarTamanhoNayra(t) {
+  const b = nayraEl();
+  if (!b) return;
+  b.classList.remove('tam-p', 'tam-m', 'tam-g');
+  b.classList.add('tam-' + t);
+  nesPrefs.nayraTam = t; savePrefs();
+  document.querySelectorAll('[data-tam]').forEach(function (el) {
+    el.classList.toggle('active', el.getAttribute('data-tam') === t);
+  });
+  aplicarPosNayra();               // tamanho novo pode exigir novo limite
+}
+
+function resetarPosNayra() {
+  delete nesPrefs.nayraPos; savePrefs();
+  aplicarPosNayra();
+  showToast('Bolinha de volta ao canto 😊');
+}
+
+// ── Arrasto ──
+// O ponto delicado: separar TOQUE de ARRASTO. Sem isso, todo arrasto
+// terminaria abrindo o chat. Só contamos como arrasto acima de 6px.
+let arrasto = { ativo: false, moveu: false, dx: 0, dy: 0, x0: 0, y0: 0, lado: 56, t: 0 };
+
+function pontoDe(e) { return e.touches && e.touches[0] ? e.touches[0] : e; }
+
+function arrastoInicio(e) {
+  const b = nayraEl();
+  if (!b) return;
+  const p = pontoDe(e);
+  const r = b.getBoundingClientRect();
+  arrasto = { ativo: true, moveu: false, dx: p.clientX - r.left, dy: p.clientY - r.top,
+              x0: p.clientX, y0: p.clientY, lado: r.width, t: Date.now() };
+  b.classList.add('arrastando');
+}
+
+function arrastoMove(e) {
+  if (!arrasto.ativo) return;
+  arrasto.t = Date.now();
+  const p = pontoDe(e);
+  if (Math.abs(p.clientX - arrasto.x0) > 6 || Math.abs(p.clientY - arrasto.y0) > 6) arrasto.moveu = true;
+  if (!arrasto.moveu) return;
+  if (e.cancelable) e.preventDefault();          // segura a rolagem da página
+  const b = nayraEl();
+  const c = limitarPosNayra(p.clientX - arrasto.dx, p.clientY - arrasto.dy, arrasto.lado);
+  b.style.left = c.x + 'px';
+  b.style.top = c.y + 'px';
+  b.style.right = 'auto';
+  b.style.bottom = 'auto';
+}
+
+function arrastoFim() {
+  if (!arrasto.ativo) return;
+  arrasto.ativo = false;
+  const b = nayraEl();
+  if (b) b.classList.remove('arrastando');
+  if (arrasto.moveu && b) {
+    // Solta onde quiser: ela desliza sozinha pra lateral mais próxima.
+    // A altura é livre; o lado, não — bolinha parada no meio da tela tapa
+    // o conteúdo em qualquer lugar que esteja.
+    const r = b.getBoundingClientRect();
+    const meio = r.left + r.width / 2;
+    nesPrefs.nayraPos = { lado: meio < window.innerWidth / 2 ? 'esq' : 'dir', y: Math.round(r.top) };
+    savePrefs();
+    b.classList.add('encaixando');
+    aplicarPosNayra();
+    setTimeout(function () { b.classList.remove('encaixando'); }, 280);
+  }
+}
+
+// Toque abre o chat; arrasto não.
+function cliqueNayra() {
+  if (arrasto.moveu) { arrasto.moveu = false; return; }
+  openNayra();
+}
+
+// Rede de segurança: se por qualquer motivo a bolinha ficou parada fora da
+// borda (um evento engolido pelo navegador, uma janela que redimensionou no
+// meio do gesto), ela volta pra lateral sozinha. É isso que garante a regra
+// "bolinha parada nunca fica no meio da tela".
+function garantirNaBorda() {
+  const b = nayraEl();
+  if (!b || b.style.display === 'none') return;
+  // Se chegamos aqui por um evento de fim, o gesto acabou — mesmo que o
+  // "soltar" tenha se perdido no caminho. Sem zerar isto, a rede de
+  // segurança desistia justamente quando era mais necessária.
+  if (arrasto.ativo) { arrasto.ativo = false; b.classList.remove('arrastando'); }
+  const r = b.getBoundingClientRect();
+  if (!r.width) return;
+  const esqX = 12;
+  const dirX = window.innerWidth - r.width - 12;
+  if (Math.abs(r.left - esqX) < 2 || Math.abs(r.left - dirX) < 2) return;  // já encostada
+  const meio = r.left + r.width / 2;
+  nesPrefs.nayraPos = { lado: meio < window.innerWidth / 2 ? 'esq' : 'dir', y: Math.round(r.top) };
+  savePrefs();
+  b.classList.add('encaixando');
+  aplicarPosNayra();
+  setTimeout(function () { b.classList.remove('encaixando'); }, 280);
+}
+
+(function ligarArrastoNayra() {
+  const b = nayraEl();
+  if (!b) return;
+
+  if (window.PointerEvent) {
+    // Caminho moderno: um único tipo de evento para dedo, mouse e caneta.
+    // A "captura" garante que o movimento continue chegando aqui mesmo se o
+    // dedo sair de cima do botão — sem isso o arrasto trava no meio.
+    b.addEventListener('pointerdown', function (e) {
+      arrastoInicio(e);
+      try { b.setPointerCapture(e.pointerId); } catch (_) {}
+    });
+    b.addEventListener('pointermove', arrastoMove);
+    b.addEventListener('pointerup', function (e) {
+      arrastoFim();
+      try { b.releasePointerCapture(e.pointerId); } catch (_) {}
+    });
+    b.addEventListener('pointercancel', arrastoFim);
+  } else {
+    // Caminho antigo, para navegadores sem Pointer Events
+    b.addEventListener('mousedown', arrastoInicio);
+    b.addEventListener('touchstart', arrastoInicio, { passive: true });
+    document.addEventListener('mousemove', arrastoMove);
+    document.addEventListener('touchmove', arrastoMove, { passive: false });
+    document.addEventListener('mouseup', arrastoFim);
+    document.addEventListener('touchend', arrastoFim);
+    document.addEventListener('touchcancel', arrastoFim);
+  }
+
+  // Cinto e suspensório: qualquer fim de interação confere a borda
+  ['pointerup', 'pointercancel', 'touchend', 'touchcancel', 'mouseup', 'click'].forEach(function (ev) {
+    document.addEventListener(ev, function () { setTimeout(garantirNaBorda, 30); });
+  });
+  window.addEventListener('blur', garantirNaBorda);
+
+  // Último recurso: uma conferida periódica barata. Em navegador comum ela
+  // nunca faz nada (sai na primeira linha porque a bolinha já está na borda),
+  // mas garante a regra mesmo em ambientes que engolem eventos de toque.
+  setInterval(function () {
+    // um arrasto de verdade tem movimento recente; se faz tempo que nada se
+    // move, o gesto morreu (evento de soltar perdido) e a bolinha precisa encostar
+    if (arrasto.ativo && Date.now() - arrasto.t < 1500) return;
+    garantirNaBorda();
+  }, 700);
+
+  window.addEventListener('resize', aplicarPosNayra);
+  window.addEventListener('orientationchange', function () { setTimeout(aplicarPosNayra, 250); });
+})();
+
+aplicarTamanhoNayra(nesPrefs.nayraTam || 'm');
+aplicarPosNayra();
 
 // Primeira pintura do catálogo (agora com filtros no ar)
 applyView();
