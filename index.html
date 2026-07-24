@@ -430,7 +430,10 @@
     .product-overlay { padding:0; }
     .product-page { max-width:1080px; margin:0 auto; min-height:auto; border-left:1px solid var(--border); border-right:1px solid var(--border); }
     .pp-body { display:grid; grid-template-columns:1fr 1fr; gap:0 44px; padding:0 40px 48px; align-items:start; }
-    .pp-hero { border-radius:16px; margin-top:32px; aspect-ratio:1; font-size:130px; position:sticky; top:96px; }
+    /* Nada de position:sticky aqui. A imagem ficava presa e descia junto com
+       a rolagem, cobrindo a ficha técnica e os combos. E max-height evita que
+       numa tela grande ela vire um quadrado de 700px de altura. */
+    .pp-hero { border-radius:16px; margin-top:32px; aspect-ratio:1; font-size:130px; position:relative; max-height:58vh; }
     .pp-content { padding:32px 0 0; }
     .pp-name { font-size:32px; }
     .pp-details { grid-column:1 / -1; display:grid; grid-template-columns:1fr 1fr; gap:0 44px; align-items:start; }
@@ -1860,9 +1863,12 @@ async function checkout() {
       })
     });
 
-    if (!resp.ok) throw new Error('preferência não criada');
+    if (!resp.ok) {
+      const detalhe = await resp.text().catch(function () { return ''; });
+      throw new Error('servidor respondeu ' + resp.status + (detalhe ? ' — ' + detalhe.slice(0, 300) : ''));
+    }
     const data = await resp.json();
-    if (!data.checkoutUrl) throw new Error('sem link de checkout');
+    if (!data.checkoutUrl) throw new Error('resposta sem checkoutUrl: ' + JSON.stringify(data).slice(0, 300));
 
     // Guarda o carrinho pra reconstruir a mensagem quando o cliente VOLTAR
     // do Mercado Pago (a página recarrega no meio do caminho e perde a
@@ -1877,21 +1883,20 @@ async function checkout() {
     window.location.href = data.checkoutUrl;
 
   } catch (err) {
-    // FALLBACK: Mercado Pago ainda não configurado (ou instável).
-    // Não deixa o cliente na mão — mas avisa com honestidade que é teste.
-    console.log('Checkout real indisponível, usando confirmação local:', err.message);
-    const total = cart.reduce((s, x) => s + x.price * x.qty, 0);
-    const itensTxt = cart.map(x => `${x.qty}x ${x.name}`).join(', ');
+    // ⚠️ O PAGAMENTO NÃO ACONTECEU.
+    // Nada aqui pode dar a entender que sim: o carrinho FICA como está e a
+    // mensagem diz a verdade. Já houve aqui um "Pedido recebido! 🎉" que
+    // esvaziava o carrinho — isso faz o cliente sair achando que comprou
+    // quando não existe pedido nenhum. Numa loja no ar, é dano real.
+    console.error('[checkout] não foi possível abrir o pagamento:', err.message);
+    if (btn) { btn.textContent = 'Finalizar Compra'; btn.disabled = false; }
     closeCart();
     openNayra();
     setTimeout(() => addNayraMessage(
-      `Pedido recebido! 🎉 Você está levando: <strong>${itensTxt}</strong>.<br><br>` +
-      `Total: <strong>R$ ${total.toFixed(2).replace('.', ',')}</strong>.<br><br>` +
-      `O checkout de pagamento ainda está sendo configurado — mas o fluxo até aqui já está valendo! 😊`, []), 300);
-    cart = [];
-    updateCartBadge();
-    renderCart();
-    if (btn) { btn.textContent = 'Finalizar Compra'; btn.disabled = false; }
+      'Não consegui abrir a tela de pagamento agora. 😔<br><br>' +
+      '<strong>Seu carrinho continua guardado</strong> — nada foi cobrado e nenhum pedido foi feito. ' +
+      'Tente novamente em instantes; se continuar assim, me chama por aqui que eu te ajudo.', []), 300);
+    showToast('Pagamento indisponível no momento');
   }
 }
 
