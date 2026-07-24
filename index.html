@@ -1848,6 +1848,15 @@ function parseNayraActions(reply) {
 }
 
 // Finaliza a compra (no site teste: confirma o pedido; o pagamento real entra na fase Shopify/Stripe)
+// Abre o chat já com uma mensagem específica. Marca a conversa como iniciada
+// para a saudação padrão não disparar em cima — quem abre o chat por causa de
+// um aviso de pagamento não quer "Boa noite" atropelando a informação.
+function abrirNayraCom(html, atraso) {
+  nayraOpened = true;
+  openNayra();
+  setTimeout(function () { addNayraMessage(html, []); }, atraso || 300);
+}
+
 async function checkout() {
   if (!cart.length) { showToast('Seu carrinho está vazio 🛒'); return; }
 
@@ -1891,11 +1900,10 @@ async function checkout() {
     console.error('[checkout] não foi possível abrir o pagamento:', err.message);
     if (btn) { btn.textContent = 'Finalizar Compra'; btn.disabled = false; }
     closeCart();
-    openNayra();
-    setTimeout(() => addNayraMessage(
+    abrirNayraCom(
       'Não consegui abrir a tela de pagamento agora. 😔<br><br>' +
       '<strong>Seu carrinho continua guardado</strong> — nada foi cobrado e nenhum pedido foi feito. ' +
-      'Tente novamente em instantes; se continuar assim, me chama por aqui que eu te ajudo.', []), 300);
+      'Tente novamente em instantes; se continuar assim, me chama por aqui que eu te ajudo.');
     showToast('Pagamento indisponível no momento');
   }
 }
@@ -1922,8 +1930,6 @@ function handlePaymentReturn() {
   const itensTxt = pendente ? pendente.itens : 'seu pedido';
   const totalTxt = pendente ? 'R$ ' + pendente.total.toFixed(2).replace('.', ',') : '';
 
-  openNayra();
-
   if (status === 'aprovado') {
     // Só AQUI marcamos a sessão como convertida — depois de voltar com sinal
     // de aprovação, não no clique. É mais honesto com o funil da Central.
@@ -1932,14 +1938,14 @@ function handlePaymentReturn() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ action: 'checkout', valor: pendente ? pendente.total : 0 })
     }).catch(() => {});
-    setTimeout(() => addNayraMessage(
-      `Pagamento aprovado! 🎉🎉 Você levou: <strong>${itensTxt}</strong>${totalTxt ? ' — ' + totalTxt : ''}.<br><br>Muito obrigada pela confiança! 💛`, []), 400);
+    abrirNayraCom(
+      `Pagamento aprovado! 🎉🎉 Você levou: <strong>${itensTxt}</strong>${totalTxt ? ' — ' + totalTxt : ''}.<br><br>Muito obrigada pela confiança! 💛`, 400);
   } else if (status === 'pendente') {
-    setTimeout(() => addNayraMessage(
-      `Seu pagamento está sendo processado! ⏳ Assim que for confirmado eu te aviso por aqui. Enquanto isso, fica à vontade pra continuar olhando a loja.`, []), 400);
+    abrirNayraCom(
+      `Seu pagamento está sendo processado! ⏳ Assim que for confirmado eu te aviso por aqui. Enquanto isso, fica à vontade pra continuar olhando a loja.`, 400);
   } else {
-    setTimeout(() => addNayraMessage(
-      `Ih, seu pagamento não foi concluído. 😕 Sem problema — se quiser tentar de novo ou tiver alguma dúvida, é só me chamar!`, []), 400);
+    abrirNayraCom(
+      `Ih, seu pagamento não foi concluído. 😕 Sem problema — se quiser tentar de novo ou tiver alguma dúvida, é só me chamar!`, 400);
   }
 }
 
