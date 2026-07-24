@@ -1634,6 +1634,8 @@ function showNayraTeaser() {
     ? `Psiu! 👋 Hoje o <strong>${promo.p.name}</strong> está com <strong>${promo.off}% OFF</strong>. Quer que eu te mostre?`
     : `Oi! 👋 Posso te ajudar a achar o produto ideal? É só tocar aqui.`;
   el.classList.add('show');
+  // só agora ele tem altura de verdade — dá pra decidir se abre pra cima ou pra baixo
+  posicionarTeaser();
 }
 function hideNayraTeaser() { const el = document.getElementById('nayraTeaser'); if (el) el.classList.remove('show'); }
 function dismissTeaser() { teaserDismissed = true; hideNayraTeaser(); }
@@ -2688,18 +2690,33 @@ function posicionarTeaser() {
   const t = document.getElementById('nayraTeaser');
   const b = nayraEl();
   if (!t || !b) return;
-  if (!nesPrefs.nayraPos) { t.style.left = ''; t.style.right = ''; t.style.top = ''; t.style.bottom = ''; return; }
+  // As preferências são declaradas adiante no arquivo. Na prática já existem
+  // quando o balão aparece, mas se alguém chamar antes, saímos em silêncio
+  // em vez de derrubar o script inteiro.
+  let pos;
+  try { pos = nesPrefs.nayraPos; } catch (_) { return; }
+  if (!pos) { t.style.left = ''; t.style.right = ''; t.style.top = ''; t.style.bottom = ''; return; }
   const r = b.getBoundingClientRect();
   const larg = Math.min(250, window.innerWidth - 24);
   // com a bolinha à esquerda, o balão abre pra direita (e vice-versa),
   // senão ele sairia da tela
-  const naEsquerda = nesPrefs.nayraPos.lado === 'esq';
+  const naEsquerda = pos.lado === 'esq';
   let x = naEsquerda ? r.left : r.right - larg;
   x = Math.max(12, Math.min(x, window.innerWidth - larg - 12));
   t.style.left = x + 'px';
   t.style.right = 'auto';
-  t.style.top = 'auto';
-  t.style.bottom = Math.max(12, window.innerHeight - r.top + 12) + 'px';
+
+  // Vertical: abre pra cima quando cabe; se a bolinha estiver no alto,
+  // abre pra baixo. Sem isso o balão sai pela borda de cima da tela.
+  const alt = t.offsetHeight || 110;        // estimativa enquanto está escondido
+  const folgaTopo = 76;                     // não invade o header
+  if (r.top - alt - 12 >= folgaTopo) {
+    t.style.top = 'auto';
+    t.style.bottom = (window.innerHeight - r.top + 12) + 'px';
+  } else {
+    t.style.bottom = 'auto';
+    t.style.top = Math.max(folgaTopo, Math.min(r.bottom + 12, window.innerHeight - alt - 12)) + 'px';
+  }
 }
 
 function aplicarTamanhoNayra(t) {
